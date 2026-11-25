@@ -1,0 +1,38 @@
+/*
+ * Únicos hex do app. Paleta Dracula (escuro) e Alucard (claro), em triplets RGB
+ * para o Tailwind aplicar opacidade (bg-purple/40).
+ */
+:root,
+[data-theme='dracula'] {
+  --c-bg: 40 42 54; /* #282a36 */
+  --c-deep: 33 34 44; /* #21222c */
+  --c-darker: 25 26 33; /* #191a21 */
+  --c-line: 68 71 90; /* #44475a */
+  --c-fg: 248 248 242; /* #f8f8f2 */
+  --c-comment: 98 114 164; /* #6272a4 */
+  --c-cyan: 139 233 253; /* #8be9fd */
+  --c-green: 80 250 123; /* #50fa7b */
+  --c-orange: 255 184 108; /* #ffb86c */
+  --c-pink: 255 121 198; /* #ff79c6 */
+  --c-purple: 189 147 249; /* #bd93f9 */
+  --c-red: 255 85 85; /* #ff5555 */
+  --c-yellow: 241 250 140; /* #f1fa8c */
+  color-scheme: dark;
+}
+
+[data-theme='alucard'] {
+  --c-bg: 255 251 235; /* #fffbeb */
+  --c-deep: 239 237 220; /* #efeddc */
+  --c-darker: 222 220 197; /* #dedcc5 */
+  --c-line: 207 207 222; /* #cfcfde */
+  --c-fg: 31 31 31; /* #1f1f1f */
+  --c-comment: 99 95 141; /* #635f8d */
+  --c-cyan: 3 106 150; /* #036a96 */
+  --c-green: 20 113 10; /* #14710a */
+  --c-orange: 163 77 20; /* #a34d14 */
+  --c-pink: 163 20 77; /* #a3144d */
+  --c-purple: 100 74 201; /* #644ac9 */
+  --c-red: 203 58 42; /* #cb3a2a */
+  --c-yellow: 132 110 21; /* #846e15 */
+  color-scheme: light;
+}

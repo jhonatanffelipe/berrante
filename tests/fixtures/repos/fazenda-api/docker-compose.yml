@@ -1,0 +1,81 @@
+# Ambiente de desenvolvimento do Fazenda (projeto fictício de exemplo).
+#
+#   db        Postgres 17                                   localhost:5433
+#   mailpit   SMTP de teste + caixa de entrada              SMTP 1025 · UI http://localhost:8025
+#   redis     cache (perfil "full")                         localhost:6380
+#   mongo     auditoria (perfil "full")                     localhost:27018
+#
+# A rede fazenda-network é compartilhada com o fazenda-logs (Loki, Prometheus, Grafana):
+#   docker network create fazenda-network
+
+name: fazenda
+
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: fazenda-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_SUPERUSER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_SUPERUSER_PASSWORD:-postgres_dev}
+      POSTGRES_DB: ${POSTGRES_DATABASE:-fazenda}
+      FAZENDA_OWNER_PASSWORD: ${POSTGRES_OWNER_PASSWORD:-fazenda_owner_dev}
+      FAZENDA_APP_PASSWORD: ${POSTGRES_APP_PASSWORD:-fazenda_app_dev}
+      FAZENDA_PLATFORM_PASSWORD: ${POSTGRES_PLATFORM_PASSWORD:-fazenda_platform_dev}
+      FAZENDA_EXTRA_DATABASES: fazenda_e2e
+    ports:
+      - '127.0.0.1:5433:5432'
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+    networks: [fazenda-network]
+
+  mailpit:
+    image: axllent/mailpit:v1.21
+    container_name: fazenda-mailpit
+    ports:
+      - '127.0.0.1:1025:1025'
+      - '127.0.0.1:8025:8025'
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: 'true'
+      MP_SMTP_AUTH_ALLOW_INSECURE: 'true'
+    healthcheck:
+      test: ['CMD', '/mailpit', 'readyz']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+    networks: [fazenda-network]
+
+  redis:
+    image: redis:7-alpine
+    container_name: fazenda-redis
+    profiles: [full]
+    ports:
+      - '127.0.0.1:6380:6379'
+    restart: unless-stopped
+    networks: [fazenda-network]
+
+  mongo:
+    image: mongo:7
+    container_name: fazenda-mongo
+    profiles: [full]
+    ports:
+      - '127.0.0.1:27018:27017'
+    volumes:
+      - mongo-data:/data/db
+    restart: unless-stopped
+    networks: [fazenda-network]
+
+volumes:
+  db-data:
+  mongo-data:
+
+networks:
+  fazenda-network:
+    external: true

@@ -1,0 +1,131 @@
+@import './theme.css';
+@import '@xterm/xterm/css/xterm.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+  body {
+    @apply bg-bg font-mono text-[13px] text-fg antialiased;
+    user-select: none;
+  }
+  /* Grid de fundo sutil (desligável nas configurações). */
+  .bg-grid {
+    background-image:
+      linear-gradient(rgb(var(--c-line) / 0.18) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(var(--c-line) / 0.18) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+  input,
+  textarea,
+  select,
+  .selectable {
+    user-select: text;
+  }
+  ::selection {
+    @apply bg-purple/40;
+  }
+  :focus-visible {
+    outline: 2px solid rgb(var(--c-purple));
+    outline-offset: 2px;
+  }
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgb(var(--c-line));
+  }
+  ::-webkit-scrollbar-track {
+    background: rgb(var(--c-deep));
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer components {
+  /*
+   * Bloco pixelado: borda em "degraus" feita só com box-shadow (cantos chanfrados de 1 pixel-art),
+   * mais um bisel interno claro/escuro. Sem border-radius em lugar nenhum.
+   */
+  .pixel-block {
+    --edge: rgb(var(--c-line));
+    --px: 4px;
+    position: relative;
+    background: rgb(var(--c-deep));
+    box-shadow:
+      0 calc(var(--px) * -1) 0 0 var(--edge),
+      0 var(--px) 0 0 var(--edge),
+      calc(var(--px) * -1) 0 0 0 var(--edge),
+      var(--px) 0 0 0 var(--edge),
+      inset calc(var(--px) * -1) calc(var(--px) * -1) 0 0 rgb(0 0 0 / 0.22),
+      inset var(--px) var(--px) 0 0 rgb(255 255 255 / 0.05);
+    margin: var(--px);
+  }
+  .pixel-block-sm {
+    --px: 2px;
+  }
+
+  .pixel-btn {
+    --edge: rgb(var(--c-line));
+    --face: rgb(var(--c-line));
+    @apply inline-flex select-none items-center justify-center gap-2 px-3 py-1.5 font-pixel text-pixel uppercase tracking-wide;
+    background: var(--face);
+    box-shadow:
+      0 -2px 0 0 var(--edge),
+      0 2px 0 0 var(--edge),
+      -2px 0 0 0 var(--edge),
+      2px 0 0 0 var(--edge),
+      inset -2px -4px 0 0 rgb(0 0 0 / 0.3),
+      inset 2px 2px 0 0 rgb(255 255 255 / 0.18);
+    margin: 2px;
+    transition: transform 40ms steps(1);
+  }
+  .pixel-btn:hover:not(:disabled) {
+    filter: brightness(1.12);
+  }
+  /* Afunda 2px no clique. */
+  .pixel-btn:active:not(:disabled) {
+    transform: translateY(2px);
+    box-shadow:
+      0 -2px 0 0 var(--edge),
+      0 2px 0 0 var(--edge),
+      -2px 0 0 0 var(--edge),
+      2px 0 0 0 var(--edge),
+      inset 2px 2px 0 0 rgb(0 0 0 / 0.3);
+  }
+  .pixel-btn:disabled {
+    @apply cursor-not-allowed opacity-40;
+  }
+
+  .pixel-input {
+    @apply w-full bg-darker px-3 py-2 font-mono text-[13px] text-fg placeholder:text-comment;
+    box-shadow:
+      inset 2px 2px 0 0 rgb(0 0 0 / 0.35),
+      0 0 0 2px rgb(var(--c-line));
+  }
+  .pixel-input:focus {
+    outline: none;
+    box-shadow:
+      inset 2px 2px 0 0 rgb(0 0 0 / 0.35),
+      0 0 0 2px rgb(var(--c-purple));
+  }
+
+  .pixel-cell {
+    box-shadow:
+      inset -2px -2px 0 0 rgb(0 0 0 / 0.3),
+      inset 2px 2px 0 0 rgb(255 255 255 / 0.3);
+  }
+}

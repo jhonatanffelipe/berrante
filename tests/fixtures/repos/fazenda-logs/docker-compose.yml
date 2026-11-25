@@ -1,0 +1,93 @@
+# Stack de observabilidade do Fazenda (Loki, Prometheus e Grafana), projeto fictício de exemplo.
+#
+# A rede `fazenda-network` é criada à mão, uma única vez: docker network create fazenda-network.
+# Portas só em 127.0.0.1: Grafana 3001, Loki 3101, Prometheus 9092.
+
+services:
+  loki:
+    image: grafana/loki:3.4.2
+    container_name: fazenda-loki
+    command: -config.file=/etc/loki/loki-config.yml
+    ports:
+      - '127.0.0.1:3101:3100'
+    volumes:
+      - ./loki-config.yml:/etc/loki/loki-config.yml:ro
+      - loki-data:/loki
+    healthcheck:
+      test: ['CMD', '/busybox/wget', '-q', '--spider', 'http://localhost:3100/ready']
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    mem_limit: 512m
+    restart: unless-stopped
+    networks:
+      - fazenda-network
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: fazenda-prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=15d
+      - --web.enable-lifecycle
+    ports:
+      - '127.0.0.1:9092:9090'
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./alerts:/etc/prometheus/alerts:ro
+      - prometheus-data:/prometheus
+    # Em desenvolvimento a API roda no host (yarn dev); o Prometheus a alcança por host.docker.internal
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '--spider', 'http://localhost:9090/-/ready']
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    mem_limit: 512m
+    restart: unless-stopped
+    networks:
+      - fazenda-network
+
+  grafana:
+    image: grafana/grafana:11.6.0
+    container_name: fazenda-grafana
+    ports:
+      - '127.0.0.1:3001:3000'
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:?Defina GRAFANA_ADMIN_PASSWORD no .env}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_AUTH_ANONYMOUS_ENABLED=false
+      - GF_ANALYTICS_REPORTING_ENABLED=false
+      - GF_ANALYTICS_CHECK_FOR_UPDATES=false
+      - GF_SERVER_ROOT_URL=http://localhost:3001
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -q --spider http://localhost:3000/api/health || exit 1']
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    depends_on:
+      loki:
+        condition: service_healthy
+      prometheus:
+        condition: service_healthy
+    mem_limit: 512m
+    restart: unless-stopped
+    networks:
+      - fazenda-network
+
+volumes:
+  loki-data:
+  grafana-data:
+  prometheus-data:
+
+networks:
+  fazenda-network:
+    external: true

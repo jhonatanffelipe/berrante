@@ -1,0 +1,53 @@
+import type { IpcChannel } from './contract'
+
+/**
+ * Lista explícita de canais permitidos no preload (sem zod, para não inflar o bundle sandboxed).
+ * O teste `ipc-channels.test.ts` garante que bate com os schemas.
+ */
+export const IPC_CHANNELS = [
+  'app:info',
+  'auth:status',
+  'auth:startDeviceFlow',
+  'auth:pollDeviceFlow',
+  'auth:cancelDeviceFlow',
+  'auth:importGhCli',
+  'auth:logout',
+  'auth:openVerificationUri',
+  'github:listRepos',
+  'repos:listLocal',
+  'repos:clone',
+  'repos:pull',
+  'repos:importFolder',
+  'repos:remove',
+  'repos:reveal',
+  'projects:list',
+  'projects:get',
+  'projects:create',
+  'projects:update',
+  'projects:delete',
+  'startup:detect',
+  'startup:savePlan',
+  'startup:analyzeWithAi',
+  'runtime:get',
+  'runtime:checkConflicts',
+  'runtime:startAll',
+  'runtime:stopAll',
+  'runtime:startService',
+  'runtime:stopService',
+  'runtime:restartService',
+  'runtime:runAction',
+  'runtime:getLogs',
+  'runtime:clearLogs',
+  'ports:list',
+  'ports:kill',
+  'settings:get',
+  'settings:update',
+  'settings:setAiEnabled',
+  'settings:pickCloneRoot',
+  'settings:aiStatus',
+  'security:totpStatus',
+  'security:totpBeginSetup',
+  'security:totpConfirm',
+  'security:totpDisable',
+  'security:regenerateRecovery'
+] as const satisfies readonly IpcChannel[]

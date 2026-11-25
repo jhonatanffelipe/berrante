@@ -1,0 +1,35 @@
+appId: dev.berrante.app
+productName: Berrante
+copyright: Copyright © 2026 Jhonatan Felipe
+directories:
+  output: release/${version}
+  buildResources: build
+files:
+  - out/**
+  - package.json
+  - '!**/*.map'
+asar: true
+mac:
+  category: public.app-category.developer-tools
+  icon: build/icon.png
+  target:
+    - target: dmg
+      arch: [arm64]
+    - target: zip
+      arch: [arm64]
+  # Build local: sem assinatura nem notarização (identity null). Veja o README para abrir no Gatekeeper.
+  identity: null
+  hardenedRuntime: false
+  darkModeSupport: true
+dmg:
+  title: Berrante ${version}
+  iconSize: 96
+  contents:
+    - { x: 140, y: 180 }
+    - { x: 400, y: 180, type: link, path: /Applications }
+# Próximas etapas (Linux .deb e Windows com WSL) — ver README "Roadmap multiplataforma".
+linux:
+  target: [deb]
+  icon: build/icon.png
+  category: Development
+  maintainer: Jhonatan Felipe
