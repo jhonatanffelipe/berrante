@@ -16,7 +16,7 @@ de preparo e scripts de dev na ordem certa, com um clique.
 [Novidades](CHANGELOG.md) ·
 [Desenvolvimento](docs/desenvolvimento.md)
 
-<img src="docs/images/hero.png" alt="Berrante com a tropa Fazenda de pé: 3 de 3 processos rodando, containers concluídos, portas e ações" width="100%">
+<img src="docs/images/hero.png" alt="Berrante com a tropa Fazenda de pé: 3 de 3 processos rodando, branch e alterações de cada repo, portas clicáveis, perfil e duração da última subida" width="100%">
 
 </div>
 
@@ -58,15 +58,15 @@ de preparo e scripts de dev na ordem certa, com um clique.
 
 <table>
   <tr>
-    <td width="50%"><img src="docs/images/plano-de-subida.png" alt="Workflow de subida: passos em ordem com nome, comando, pasta, env e segue ao terminar, abrir uma porta ou iniciar"></td>
+    <td width="50%"><img src="docs/images/plano-de-subida.png" alt="Workflow de subida: passos em ordem com nome, comando, pasta, env, segue ao terminar, abrir uma porta, iniciar ou responder (health) e reinício automático"></td>
     <td width="50%"><img src="docs/images/contar-a-boiada.png" alt="Contar a boiada: portas abertas com PID, comando, pasta e tropa dona"></td>
   </tr>
   <tr>
-    <td align="center"><sub><b>Plano de subida</b> · workflow em passos, pasta, comando e env</sub></td>
+    <td align="center"><sub><b>Plano de subida</b> · passos, pasta, comando, env, healthcheck e reinício automático</sub></td>
     <td align="center"><sub><b>Contar a boiada</b> · portas, PIDs e de qual tropa é cada uma</sub></td>
   </tr>
   <tr>
-    <td width="50%"><img src="docs/images/repositorios.png" alt="Repositórios na máquina e no GitHub, com Finder, Pull e Remover"></td>
+    <td width="50%"><img src="docs/images/repositorios.png" alt="Repositórios na máquina e no GitHub, com importação de várias pastas, Finder, Pull e Remover"></td>
     <td width="50%"><img src="docs/images/configuracoes.png" alt="Configurações: pasta dos clones, IA, 2FA e aparência com cor de destaque"></td>
   </tr>
   <tr>

@@ -118,6 +118,18 @@ networks:
 `
 )
 
+// Cada repo vira um git com um commit (autor fictício, nunca o de quem gera): o card mostra a branch.
+// A API fica com uma alteração não salva para o print mostrar o contador de alterações.
+const git = (cwd, ...args) => execFileSync('git', ['-c', 'user.name=Berrante Demo', '-c', 'user.email=demo@berrante.invalid', '-c', 'commit.gpgsign=false', ...args], { cwd, stdio: 'ignore' })
+for (const name of ['fazenda-api', 'fazenda-web', 'fazenda-logs']) {
+  const dir = join(repos, name)
+  write(join(dir, '.gitignore'), 'node_modules\n.env\n')
+  git(dir, 'init', '-q', '-b', 'main')
+  git(dir, 'add', '-A')
+  git(dir, 'commit', '-q', '-m', 'chore: projeto de demonstração')
+}
+write(join(repos, 'fazenda-api/README.md'), readFileSync(join(repos, 'fazenda-api/README.md'), 'utf8') + '\n<!-- ajuste local -->\n')
+
 // ---- dados do Berrante: 3 repositórios, 1 tropa e o workflow já salvo
 const now = new Date().toISOString()
 const repo = (id) => ({ id, name: id, path: join(repos, id), githubFullName: `fazenda/${id}`, remoteUrl: null, addedAt: now })
@@ -142,7 +154,8 @@ const services = [
   step('fazenda-logs', `net:${NETWORK}`, `rede ${NETWORK}`, `docker network inspect ${NETWORK} >/dev/null 2>&1 || docker network create ${NETWORK}`, 'exit', { color: 'yellow' }),
   step('fazenda-logs', 'fazenda-logs:compose', 'containers', 'docker compose up -d', 'exit'),
   step('fazenda-api', 'fazenda-api:compose', 'containers', 'docker compose up -d db mailpit', 'exit'),
-  step('fazenda-api', 'fazenda-api:script:dev', 'dev', 'yarn dev', 'port', { color: 'green', env: { PORT: String(PORTS.api) } }),
+  // A API mostra as opções novas: segue quando o /health responde e reinicia sozinha se cair.
+  step('fazenda-api', 'fazenda-api:script:dev', 'dev', 'yarn dev', 'health', { color: 'green', env: { PORT: String(PORTS.api) }, healthUrl: `http://localhost:${PORTS.api}/health`, autoRestart: true }),
   step('fazenda-api', 'fazenda-api:script:worker:start', 'worker:start', 'yarn worker:start', 'start', { color: 'purple' }),
   step('fazenda-api', 'fazenda-api:script:start', 'start', 'yarn start', 'port', { color: 'orange', enabled: false }),
   step('fazenda-web', 'fazenda-web:script:dev', 'dev', 'yarn dev', 'port', { color: 'pink', env: { PORT: String(PORTS.web) } }),
@@ -158,13 +171,21 @@ const project = {
   color: 'green',
   icon: 'tee',
   repositoryIds: ['fazenda-api', 'fazenda-web', 'fazenda-logs'],
-  plan: { services, actions, detectedAt: now, updatedAt: now },
+  plan: {
+    services,
+    actions,
+    // Perfil para o seletor do cabeçalho (o print usa a tropa completa).
+    profiles: [{ id: 'profile:so-api', name: 'só a API', serviceIds: services.filter((s) => s.repoId !== 'fazenda-web').map((s) => s.id) }],
+    detectedAt: now,
+    updatedAt: now
+  },
   createdAt: now,
   updatedAt: now
 }
 write(join(data, 'repositories.json'), JSON.stringify(['fazenda-api', 'fazenda-web', 'fazenda-logs'].map(repo), null, 2))
 write(join(data, 'projects.json'), JSON.stringify([project], null, 2))
-write(join(data, 'settings.json'), JSON.stringify({ cloneRoot: repos, accent: 'azul', tintBackground: true, showGrid: true }, null, 2))
+// Avisos do macOS desligados: a geração dos prints não dispara notificações em quem roda.
+write(join(data, 'settings.json'), JSON.stringify({ cloneRoot: repos, accent: 'azul', tintBackground: true, showGrid: true, notifications: false }, null, 2))
 
 console.log(`demo pronta em ${out}; gerando prints em ${shots}…`)
 execFileSync('yarn', ['dev'], {
