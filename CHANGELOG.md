@@ -4,7 +4,7 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 [SemVer](https://semver.org/lang/pt-BR/). Enquanto estiver em `0.x`, versões menores podem mudar o formato dos
 dados; quando isso acontecer, a nota da versão avisa.
 
-## [Não lançado]
+## [0.5.0] — 2026-11-26
 
 Ferramentas do dia a dia: git da tropa, vistoria antes de subir, perfis e atalhos.
 
@@ -13,6 +13,7 @@ Ferramentas do dia a dia: git da tropa, vistoria antes de subir, perfis e atalho
   remoto. No menu **⋮ Mais**: **Atualizar repos (pull)** em todos de uma vez e **Buscar novidades (fetch)**.
 - **Trocar de pasto:** troca de branch em todos os repositórios da tropa que a têm; quem tem alteração não salva fica
   onde está.
+- **Conferir porteiras:** botão no cabeçalho da tropa que faz a vistoria sem subir nada.
 - **Vistoria do pasto:** antes de tocar o berrante (e no botão **Conferir porteiras**), além das portas ocupadas, avisa
   quando falta `.env` ou variável do `.env.example`, com botão para **criar** ou **completar** o `.env` (só anexa as
   chaves que faltam, nunca reescreve).
@@ -30,6 +31,12 @@ Ferramentas do dia a dia: git da tropa, vistoria antes de subir, perfis e atalho
   iTerm, Warp ou Ghostty) na pasta do repositório.
 - **Vários repositórios de uma vez:** selecione e clone vários do GitHub juntos, importe várias pastas locais no mesmo
   diálogo (⌘-clique) e, na tropa, filtre e marque todos.
+
+### Mudado
+- **Ações da tropa em duas colunas:** Tocar o berrante e Recolher lado a lado, Conferir porteiras e **⋮ Mais**
+  embaixo. O **Abrir no VS Code** (`⌘O`) foi para o menu **⋮ Mais**.
+- **Placar "processos de pé":** o número grande e o de cada repositório contam só os processos que ficam rodando;
+  repositório que só tem passos de preparo (rede, `docker compose up -d`) mostra **só preparo**.
 
 ## [0.4.0] — 2026-11-26
 

@@ -34,7 +34,7 @@ de preparo e scripts de dev na ordem certa, com um clique.
   os processos que ficaram de pé.
 - **Curral:** todos os containers Docker da máquina, com a tropa dona de cada um; pare, suba ou reinicie de dentro
   do Berrante. Na tropa, a aba **Containers** mostra o que os passos `docker compose … up` sobem, serviço a serviço.
-- **VS Code a um clique:** cada tropa pode apontar para um `.code-workspace`; o botão **VS Code** (`⌘O`) abre ele.
+- **VS Code a um clique:** cada tropa pode apontar para um `.code-workspace`; **Abrir no VS Code**, no menu **⋮ Mais** da tropa (ou `⌘O`), abre ele.
 - **Contar a boiada:** todas as portas abertas da máquina, com PID, comando e de qual tropa é. Avisa antes de subir
   se alguma porta já estiver ocupada.
 - **Git da tropa:** branch, alterações e commits à frente/atrás de cada repo; **pull** em todos de uma vez e
@@ -115,8 +115,8 @@ Baixe na página da [última versão](https://github.com/jhonatanffelipe/berrant
 
 | Sistema | Arquivo |
 |---|---|
-| macOS · Apple Silicon (M1 ou mais novo) | `Berrante-0.4.0-mac-arm64.dmg` |
-| macOS · Intel | `Berrante-0.4.0-mac-x64.dmg` |
+| macOS · Apple Silicon (M1 ou mais novo) | `Berrante-0.5.0-mac-arm64.dmg` |
+| macOS · Intel | `Berrante-0.5.0-mac-x64.dmg` |
 
 O app não é assinado, então o macOS pede uma confirmação na primeira abertura. O passo a passo, da instalação à
 primeira tropa de pé, está no **[guia de instalação](docs/guia-instalacao.md)**.
