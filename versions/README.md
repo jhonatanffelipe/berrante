@@ -6,6 +6,7 @@ Cada pasta guarda as notas de uma versão. Os instaladores ficam anexados ao
 
 | Versão | Data | Plataformas | Notas |
 |---|---|---|---|
+| [v0.6.0](v0.6.0/README.md) | 2026-11-26 | macOS (arm64 e x64) | Mudar a porta ocupada pela vistoria, direto no `.env` |
 | [v0.5.0](v0.5.0/README.md) | 2026-11-26 | macOS (arm64 e x64) | Git da tropa, vistoria do `.env`, perfis, healthcheck, barra de menu e avisos |
 | [v0.4.0](v0.4.0/README.md) | 2026-11-26 | macOS (arm64 e x64) | Workspace do VS Code por tropa, aberto com um clique ou `⌘O` |
 | [v0.3.0](v0.3.0/README.md) | 2026-11-26 | macOS (arm64 e x64) | Curral e aba Containers: parar, subir e reiniciar containers |
