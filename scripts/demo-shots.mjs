@@ -24,10 +24,14 @@ const NETWORK = 'fazenda-demo-network'
 const PORTS = { api: 13333, web: 15173, db: 15433, smtp: 11025, mail: 18025, loki: 13101, grafana: 13001 }
 
 if (down) {
-  for (const repo of ['fazenda-api', 'fazenda-logs']) {
-    if (existsSync(join(repos, repo))) spawnSync('docker', ['compose', 'down', '-v'], { cwd: join(repos, repo), stdio: 'inherit' })
+  // Só derruba o que existe: rodar de novo, sem nada de pé, não gera aviso nem erro.
+  const running = spawnSync('docker', ['compose', 'ls', '--all', '--format', 'json'], { encoding: 'utf8' })
+  const projects = new Set((JSON.parse(running.stdout || '[]') ?? []).map((p) => p.Name))
+  for (const [repo, project] of [['fazenda-api', 'fazenda-demo'], ['fazenda-logs', 'fazenda-demo-logs']]) {
+    if (projects.has(project) && existsSync(join(repos, repo))) spawnSync('docker', ['compose', 'down', '-v'], { cwd: join(repos, repo), stdio: 'inherit' })
   }
-  spawnSync('docker', ['network', 'rm', NETWORK], { stdio: 'inherit' })
+  if (spawnSync('docker', ['network', 'inspect', NETWORK], { stdio: 'ignore' }).status === 0) spawnSync('docker', ['network', 'rm', NETWORK], { stdio: 'inherit' })
+  console.log('demo derrubada (containers, volumes e rede)')
   process.exit(0)
 }
 
