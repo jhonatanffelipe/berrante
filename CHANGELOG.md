@@ -4,6 +4,19 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 [SemVer](https://semver.org/lang/pt-BR/). Enquanto estiver em `0.x`, versões menores podem mudar o formato dos
 dados; quando isso acontecer, a nota da versão avisa.
 
+## [Não lançado]
+
+### Adicionado
+- **Mudar porta na vistoria:** em cada porta ocupada, o botão **Mudar porta** sugere uma porta livre na máquina e
+  em nenhuma tropa (passos desligados inclusive), mostra cada linha de `.env` que muda (a do serviço e os endereços
+  que apontam para ela em outros repos da tropa, como `VITE_API_URL`) e só grava depois de confirmar. Porta de
+  compose vinda de `${VAR:-porta}` vira `VAR` no `.env`.
+- Quando a porta não vem do `.env` (fixa no compose ou no env do passo), a vistoria avisa que o correto é declarar no
+  `.env`.
+
+### Mudado
+- A vistoria passa a enxergar o `PORT` do `.env` da pasta do passo, não só o do env do passo.
+
 ## [0.5.0] — 2026-11-26
 
 Ferramentas do dia a dia: git da tropa, vistoria antes de subir, perfis e atalhos.

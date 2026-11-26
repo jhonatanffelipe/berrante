@@ -118,6 +118,8 @@ export const ipcSchemas = {
   'runtime:get': z.object({ projectId: id }),
   'runtime:checkConflicts': z.object({ projectId: id, profileId }),
   'runtime:preflight': z.object({ projectId: id, profileId }),
+  'runtime:planPortChange': z.object({ projectId: id, serviceId: id, port: z.number().int().min(1).max(65_535), newPort: z.number().int().min(1).max(65_535).optional() }),
+  'runtime:applyPortChange': z.object({ projectId: id, serviceId: id, port: z.number().int().min(1).max(65_535), newPort: z.number().int().min(1).max(65_535) }),
   'runtime:startAll': z.object({ projectId: id, ignoreConflicts: z.boolean().optional(), profileId }),
   'runtime:stopAll': z.object({ projectId: id }),
   'runtime:startService': z.object({ projectId: id, serviceId: id }),

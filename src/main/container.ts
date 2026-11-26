@@ -96,6 +96,10 @@ import { FixEnvUseCase } from './application/env/FixEnvUseCase'
 import { PreflightUseCase } from './application/runtime/PreflightUseCase'
 import { OpenRepoTerminalUseCase } from './application/github/OpenRepoTerminalUseCase'
 import { OpenLocalPortUseCase } from './application/ports/OpenLocalPortUseCase'
+import { PortChangePlanner } from './application/ports/PortChangePlanner'
+import { PlanPortChangeUseCase } from './application/ports/PlanPortChangeUseCase'
+import { ApplyPortChangeUseCase } from './application/ports/ApplyPortChangeUseCase'
+import { envValue } from './application/ports/portEdits'
 
 declare const __GITHUB_CLIENT_ID__: string
 
@@ -161,13 +165,16 @@ export function buildContainer(getWindow: () => BrowserWindow | null) {
           list.push(...hostPorts(info.ports))
         }
       }
-      const envPort = Number(svc.env.PORT)
+      // PORT do env do passo (vale mais) ou do .env da pasta do passo, para processos que não são compose.
+      const fromEnvFile = svc.kind !== 'compose' && !svc.env.PORT ? envValue((await envFiles.read(svc.cwd, '.env')) ?? '', 'PORT') : null
+      const envPort = Number(svc.env.PORT ?? fromEnvFile)
       if (Number.isInteger(envPort) && envPort > 0) list.push(envPort)
       hints.set(svc.id, list)
     }
     return hints
   }
   const runtime = new RuntimeService(projects, pm, docker, ports, settings, runtimeState, portHints, http, logger)
+  const portPlanner = new PortChangePlanner(projects, localRepos, envFiles, inspector, ports, portHints, logger)
   const deviceFlowAvailable = clientId.length > 0
 
   return {
@@ -225,6 +232,8 @@ export function buildContainer(getWindow: () => BrowserWindow | null) {
       listPorts: new ListPortsUseCase(ports, runtime, projects),
       killPid: new KillPidUseCase(runtime, ports, killer, guard, projects, settings, logger),
       openPort: new OpenLocalPortUseCase(shell),
+      planPortChange: new PlanPortChangeUseCase(portPlanner),
+      applyPortChange: new ApplyPortChangeUseCase(portPlanner),
       // containers (curral)
       listContainers: new ListContainersUseCase(docker, projects, localRepos),
       containerAction: new ContainerActionUseCase(docker, logger),

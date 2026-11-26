@@ -49,6 +49,8 @@ export function buildHandlers(uc: UseCases): Handlers {
     'runtime:get': (i) => uc.getRuntime.execute(i.projectId),
     'runtime:checkConflicts': (i) => uc.checkConflicts.execute(i.projectId, i.profileId),
     'runtime:preflight': (i) => uc.preflight.execute(i.projectId, i.profileId),
+    'runtime:planPortChange': (i) => uc.planPortChange.execute(i.projectId, i.serviceId, i.port, i.newPort),
+    'runtime:applyPortChange': (i) => uc.applyPortChange.execute(i.projectId, i.serviceId, i.port, i.newPort),
     'runtime:startAll': (i) => uc.startProject.execute(i.projectId, i.ignoreConflicts, i.profileId),
     'runtime:stopAll': (i) => uc.stopAll.execute(i.projectId),
     'runtime:startService': (i) => uc.startService.execute(i.projectId, i.serviceId),

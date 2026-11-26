@@ -19,6 +19,10 @@ export class FsEnvFile implements EnvFileGateway {
     await writeFile(target(repoPath, file), content, { flag: 'wx', mode: 0o600 })
   }
 
+  async write(repoPath: string, file: string, content: string): Promise<void> {
+    await writeFile(target(repoPath, file), content, { flag: 'w' })
+  }
+
   async append(repoPath: string, file: string, content: string): Promise<void> {
     await appendFile(target(repoPath, file), content)
   }

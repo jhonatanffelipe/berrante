@@ -40,7 +40,7 @@ de preparo e scripts de dev na ordem certa, com um clique.
 - **Git da tropa:** branch, alterações e commits à frente/atrás de cada repo; **pull** em todos de uma vez e
   **trocar de pasto** (mudar de branch na tropa toda).
 - **Vistoria antes de subir:** portas ocupadas e `.env` faltando variáveis do exemplo, com botão para criar ou
-  completar o `.env`.
+  completar o `.env` e para **mudar a porta** por uma livre (na máquina e em todas as tropas) direto no `.env`.
 - **Perfis, healthcheck e reinício automático:** suba só parte da tropa, espere uma URL `/health` responder e deixe o
   serviço que cair subir sozinho de novo.
 - **Barra de menu e avisos:** toque e recolha tropas pelo ícone na barra de menu e receba avisos do macOS quando a

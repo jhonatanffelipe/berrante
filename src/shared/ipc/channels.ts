@@ -40,6 +40,8 @@ export const IPC_CHANNELS = [
   'runtime:get',
   'runtime:checkConflicts',
   'runtime:preflight',
+  'runtime:planPortChange',
+  'runtime:applyPortChange',
   'runtime:startAll',
   'runtime:stopAll',
   'runtime:startService',

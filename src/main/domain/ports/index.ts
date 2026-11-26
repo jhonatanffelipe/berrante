@@ -245,6 +245,8 @@ export interface EnvFileGateway {
   /** Cria o arquivo só se ele não existir. */
   create(repoPath: string, file: string, content: string): Promise<void>
   append(repoPath: string, file: string, content: string): Promise<void>
+  /** Reescreve um arquivo que já existe (troca de porta). */
+  write(repoPath: string, file: string, content: string): Promise<void>
 }
 
 // ---------- Editor ----------

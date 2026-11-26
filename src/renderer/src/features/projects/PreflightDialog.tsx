@@ -4,6 +4,7 @@ import { call, errorMessage } from '../../lib/api'
 import { Dialog } from '../../components/ui/Dialog'
 import { PixelButton } from '../../components/ui/PixelButton'
 import { useToast } from '../../components/ui/Toast'
+import { PortChangePanel } from './PortChangePanel'
 
 interface Props {
   projectId: string
@@ -19,6 +20,7 @@ interface Props {
 export function PreflightDialog({ projectId, preflight, onPlayAnyway, onRecheck, onClose, onOpenPorts }: Props) {
   const toast = useToast()
   const [fixing, setFixing] = useState<string | null>(null)
+  const [changing, setChanging] = useState<string | null>(null)
 
   const fix = async (repoId: string, repoName: string) => {
     setFixing(repoId)
@@ -41,11 +43,34 @@ export function PreflightDialog({ projectId, preflight, onPlayAnyway, onRecheck,
       {conflicts.length ? (
         <section className="space-y-2">
           <h4 className="label">Porta ocupada</h4>
-          {conflicts.map((c) => (
-            <div key={`${c.serviceId}-${c.port}`} className="rounded border border-line bg-darker px-3 py-2 font-mono text-xs">
-              <span className="text-orange">:{c.port}</span> → {c.serviceName} <span className="text-comment">(pid {c.pid}: {c.command.slice(0, 80)})</span>
-            </div>
-          ))}
+          {conflicts.map((c) => {
+            const key = `${c.serviceId}-${c.port}`
+            return (
+              <div key={key} className="rounded border border-line bg-darker">
+                <div className="flex items-start gap-3 px-3 py-2 font-mono text-xs">
+                  <p className="min-w-0 flex-1 break-words">
+                    <span className="text-orange">:{c.port}</span> → {c.serviceName} <span className="text-comment">(pid {c.pid}: {c.command.slice(0, 80)})</span>
+                  </p>
+                  {changing !== key ? (
+                    <PixelButton size="sm" accent="cyan" onClick={() => setChanging(key)}>
+                      Mudar porta
+                    </PixelButton>
+                  ) : null}
+                </div>
+                {changing === key ? (
+                  <PortChangePanel
+                    projectId={projectId}
+                    conflict={c}
+                    onCancel={() => setChanging(null)}
+                    onChanged={async () => {
+                      setChanging(null)
+                      await onRecheck()
+                    }}
+                  />
+                ) : null}
+              </div>
+            )
+          })}
         </section>
       ) : null}
       {env.length ? (

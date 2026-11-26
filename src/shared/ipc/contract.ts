@@ -16,6 +16,7 @@ import type {
   GitOperationResult,
   LocalRepository,
   PortBinding,
+  PortChangePlan,
   PortConflict,
   Project,
   ProjectContainers,
@@ -79,6 +80,8 @@ export interface IpcOutputs {
   'runtime:get': ProjectRuntime
   'runtime:checkConflicts': PortConflict[]
   'runtime:preflight': Preflight
+  'runtime:planPortChange': PortChangePlan
+  'runtime:applyPortChange': PortChangePlan
   'runtime:startAll': StartResult
   'runtime:stopAll': void
   'runtime:startService': void

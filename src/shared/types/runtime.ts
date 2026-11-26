@@ -58,6 +58,32 @@ export interface EnvIssue {
   missingKeys: string[]
 }
 
+/** Uma linha de `.env` que muda junto com a porta (valores com credencial chegam mascarados). */
+export interface PortEdit {
+  repoId: string
+  repoName: string
+  /** Caminho relativo ao repositório (ex.: `.env`, `infra/.env`). */
+  file: string
+  key: string
+  before: string | null
+  after: string
+  /** port = de onde o serviço lê a porta; url = endereço que cita a porta; add = variável nova no `.env`. */
+  kind: 'port' | 'url' | 'add'
+}
+
+/** Troca de porta proposta para um passo com porta ocupada. */
+export interface PortChangePlan {
+  serviceId: string
+  serviceName: string
+  port: number
+  /** Porta livre na máquina e em nenhuma tropa (null = não achei uma). */
+  newPort: number | null
+  edits: PortEdit[]
+  /** Por que não dá para trocar sozinho (ou cuidados), em texto para o usuário. */
+  warnings: string[]
+  canApply: boolean
+}
+
 /** Vistoria antes de tocar o berrante: portas ocupadas e `.env` incompletos. */
 export interface Preflight {
   conflicts: PortConflict[]
