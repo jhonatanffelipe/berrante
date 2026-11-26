@@ -14,7 +14,7 @@ export class NodeCommandRunner implements CommandRunner {
       const child = execFile(
         file,
         args,
-        { cwd: options.cwd, env, timeout: options.timeoutMs ?? 30_000, maxBuffer: 32 * 1024 * 1024, windowsHide: true },
+        { cwd: options.cwd, env, timeout: options.timeoutMs ?? 30_000, maxBuffer: 32 * 1024 * 1024 },
         (error, stdout, stderr) => {
           const code = error ? (typeof (error as NodeJS.ErrnoException).code === 'number' ? Number((error as NodeJS.ErrnoException).code) : 1) : 0
           resolve({ stdout: String(stdout), stderr: String(stderr) || (error && !stderr ? error.message : ''), code })

@@ -15,16 +15,13 @@
     "dev": "electron-vite dev",
     "build": "yarn typecheck && electron-vite build",
     "preview": "electron-vite preview",
-    "dist": "yarn build && electron-builder --mac --win --linux",
+    "dist": "yarn build && electron-builder --mac",
     "dist:dir": "yarn build && electron-builder --mac --arm64 --dir",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
     "test": "vitest run",
     "test:watch": "vitest",
     "icon": "node scripts/make-icon.mjs",
     "postinstall": "node node_modules/electron/install.js && node scripts/dev-app-name.mjs && electron-builder install-app-deps",
-    "dist:mac": "yarn build && electron-builder --mac",
-    "dist:win": "yarn build && electron-builder --win",
-    "dist:linux": "yarn build && electron-builder --linux",
     "predev": "node scripts/dev-app-name.mjs"
   },
   "dependencies": {

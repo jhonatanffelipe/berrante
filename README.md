@@ -9,8 +9,6 @@ de preparo e scripts de dev na ordem certa, com um clique.
 
 [![Release](https://img.shields.io/github/v/release/jhonatanffelipe/berrante?color=2f8cff&label=vers%C3%A3o)](https://github.com/jhonatanffelipe/berrante/releases/latest)
 ![macOS](https://img.shields.io/badge/macOS-000000?logo=apple&logoColor=white)
-![Windows](https://img.shields.io/badge/Windows-0078D6?logo=windows&logoColor=white)
-![Linux](https://img.shields.io/badge/Linux-FCC624?logo=linux&logoColor=black)
 ![Electron](https://img.shields.io/badge/Electron-2B2E3A?logo=electron&logoColor=9FEAF9)
 
 [**Baixar**](https://github.com/jhonatanffelipe/berrante/releases/latest) ·
@@ -96,34 +94,25 @@ Baixe na página da [última versão](https://github.com/jhonatanffelipe/berrant
 |---|---|
 | macOS · Apple Silicon (M1 ou mais novo) | `Berrante-0.1.0-mac-arm64.dmg` |
 | macOS · Intel | `Berrante-0.1.0-mac-x64.dmg` |
-| Windows 10/11 · x64 | `Berrante-Setup-0.1.0-win-x64.exe` |
-| Windows 11 · ARM | `Berrante-Setup-0.1.0-win-arm64.exe` |
-| Linux · Debian/Ubuntu | `Berrante-0.1.0-linux-amd64.deb` / `-linux-arm64.deb` |
-| Linux · qualquer distro | `Berrante-0.1.0-linux-x86_64.AppImage` / `-linux-arm64.AppImage` |
 
-O instalador do Windows é um assistente: dá para escolher entre instalar **só para você** ou **para todos os
-usuários** (em `Arquivos de Programas`) e trocar a pasta. Ele cria atalhos no Menu Iniciar e na Área de Trabalho, e
-o app aparece em **Configurações → Aplicativos** para desinstalar.
+O app não é assinado, então o macOS pede uma confirmação na primeira abertura. O passo a passo, da instalação à
+primeira tropa de pé, está no **[guia de instalação](docs/guia-instalacao.md)**.
 
-Os apps não são assinados, então o macOS e o Windows pedem uma confirmação na primeira abertura. O passo a passo,
-da instalação à primeira tropa de pé, está no **[guia de instalação](docs/guia-instalacao.md)**.
-
-> **Situação nesta versão:** o **macOS** é o alvo principal e tem tudo funcionando. O **Linux** usa as mesmas
-> ferramentas e deve funcionar igual, mas foi pouco testado. No **Windows** o app instala, abre, faz login, clona e
-> detecta o plano, mas ainda **não sobe serviços nem lista portas**.
+> **Só macOS, por enquanto.** As primeiras versões do Berrante rodam apenas no macOS 12 ou mais novo (Apple Silicon
+> e Intel). Windows e Linux não são suportados.
 
 ## ⌨️ Atalhos
 
-| Atalho (macOS) | Windows/Linux | Ação |
-|---|---|---|
-| `⌘N` | `Ctrl+N` | Nova tropa |
-| `⌘↩` | `Ctrl+Enter` | Tocar o berrante |
-| `⇧⌘↩` | `Ctrl+Shift+Enter` | Recolher a boiada |
-| `⌘1` … `⌘9` | `Ctrl+1` … `Ctrl+9` | Ir para a tropa N |
-| `⌥⌘1` / `⌥⌘2` | `Ctrl+Alt+1` / `Ctrl+Alt+2` | Abas Boiada / Plano de subida |
-| `⇧⌘R` | `Ctrl+Shift+R` | Repositórios |
-| `⇧⌘P` | `Ctrl+Shift+P` | Contar a boiada |
-| `⌘,` | `Ctrl+,` | Configurações |
+| Atalho | Ação |
+|---|---|
+| `⌘N` | Nova tropa |
+| `⌘↩` | Tocar o berrante |
+| `⇧⌘↩` | Recolher a boiada |
+| `⌘1` … `⌘9` | Ir para a tropa N |
+| `⌥⌘1` / `⌥⌘2` | Abas Boiada / Plano de subida |
+| `⇧⌘R` | Repositórios |
+| `⇧⌘P` | Contar a boiada |
+| `⌘,` | Configurações |
 
 ## 🤠 Vocabulário
 
@@ -145,7 +134,7 @@ yarn install
 cp config/.env.example config/.env   # BERRANTE_GITHUB_CLIENT_ID para o login por código
 yarn dev                             # app com HMR
 yarn test                            # vitest
-yarn dist                            # instaladores de macOS, Windows e Linux em release/<versão>/
+yarn dist                            # .dmg e .zip do macOS (arm64 e x64) em release/<versão>/
 ```
 
 Arquitetura, decisões de segurança, testes e como montar uma versão: **[docs/desenvolvimento.md](docs/desenvolvimento.md)**.

@@ -39,7 +39,7 @@ function createWindow(settings: Settings): BrowserWindow {
     title: 'Berrante',
     // Cor nativa antes do CSS carregar: o mesmo fundo tingido do tema.
     backgroundColor: windowBackground(settings.accent, settings.tintBackground),
-    titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
+    titleBarStyle: 'hiddenInset',
     trafficLightPosition: { x: 14, y: 14 },
     icon: join(__dirname, '../../build/icon.png'),
     webPreferences: {
@@ -158,6 +158,12 @@ app.on('second-instance', () => {
 })
 
 app.whenReady().then(async () => {
+  // Por enquanto o Berrante só roda no macOS (lsof/ps, shell de login, Keychain).
+  if (process.platform !== 'darwin') {
+    dialog.showErrorBox('Berrante', 'Esta versão do Berrante funciona apenas no macOS.')
+    app.exit(1)
+    return
+  }
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
     callback({ responseHeaders: { ...details.responseHeaders, 'Content-Security-Policy': [CSP] } })
   })
@@ -165,7 +171,7 @@ app.whenReady().then(async () => {
   session.defaultSession.setPermissionRequestHandler((_wc, permission, callback) => callback(permission === 'clipboard-sanitized-write'))
 
   // Em dev o Electron mostra o ícone genérico no Dock: usa o do Berrante.
-  if (!app.isPackaged && process.platform === 'darwin') app.dock?.setIcon(join(__dirname, '../../build/icon.png'))
+  if (!app.isPackaged) app.dock?.setIcon(join(__dirname, '../../build/icon.png'))
 
   container = buildContainer(() => mainWindow)
   const c = container
@@ -226,6 +232,5 @@ app.on('before-quit', (event) => {
   })()
 })
 
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit()
-})
+// macOS: fechar a última janela não encerra o app (reabre pelo Dock, via 'activate').
+app.on('window-all-closed', () => undefined)

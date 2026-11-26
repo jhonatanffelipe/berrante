@@ -38,14 +38,13 @@ aceita.
 | `yarn typecheck` | `tsc` nos projetos node (main/preload/shared/tests) e web (renderer) |
 | `yarn test` | vitest: detector de startup, parser do README, parser do lsof, contrato IPC e tema |
 | `yarn build` | typecheck + bundle em `out/` |
-| `yarn dist` | build + instaladores de macOS, Windows e Linux (arm64 e x64) em `release/<versão>/` |
-| `yarn dist:mac` / `dist:win` / `dist:linux` | build + instaladores de uma plataforma só |
+| `yarn dist` | build + `.dmg` e `.zip` do macOS (arm64 e x64) em `release/<versão>/` |
 | `yarn dist:dir` | build + `.app` sem empacotar (mais rápido para testar) |
 | `yarn icon` | regenera `build/icon.png` e `resources/icon.png` (peça "cadeirinha" do Tetris em LEDs, ver abaixo) |
 
-Os instaladores saem **sem assinatura** (veja o [guia de instalação](guia-instalacao.md) para abrir no macOS e no
-Windows). Todos são gerados a partir do macOS: o app não tem dependências nativas, então o electron-builder monta os
-pacotes de Windows e Linux sem máquina virtual.
+Os instaladores saem **sem assinatura** (veja o [guia de instalação](guia-instalacao.md) para abrir no macOS). Por
+enquanto o Berrante roda **só no macOS**: o app recusa abrir em outro sistema e o `electron-builder.yml` só tem o
+alvo `mac`.
 
 Variáveis só de dev (ignoradas no app empacotado):
 
@@ -75,7 +74,7 @@ Tailwind lê essas variáveis (`rgb(var(--c-x) / <alpha-value>)`), e a janela na
 
 **Ícone**: a peça "cadeirinha" (Z) do Tetris em LEDs azuis acesos, sobre uma placa azul-marinho com a matriz de LEDs
 apagados. É gerado por `scripts/make-icon.mjs` (sem assets de terceiros), com blocos alinhados ao pixel para ficar
-nítido até em 32 px. O electron-builder converte o PNG em `.icns` (mac) e `.ico` (Windows e instalador NSIS). Em dev
+nítido até em 32 px. O electron-builder converte o PNG em `.icns`. Em dev
 o mesmo PNG é aplicado no Dock. A sidebar usa a mesma peça ao lado do nome.
 
 ## Menu e atalhos
@@ -164,16 +163,12 @@ Em `~/Library/Application Support/Berrante/`: `projects.json`, `repositories.jso
 `yarn test` roda sobre fixtures em `tests/fixtures/repos`: README, `package.json` e compose de um projeto fictício
 (`fazenda-api`, `fazenda-web` e `fazenda-logs`), com `.env.example` só com chaves.
 
-## Roadmap multiplataforma
+## Só macOS (por enquanto)
 
-O foco atual é o macOS. Tudo que toca o SO passa por ports (`CommandRunner`, `PortScannerGateway`,
-`ProcessManagerGateway`, `ProcessKiller`, `ShellEnv`), então outras plataformas são novos adapters no
-`container.ts`, sem mexer em use case:
-
-- **Windows (instalador)**: o instalador NSIS (x64 e ARM64) já sai no `yarn dist`, com escolha de pasta e de "só
-  para mim" ou "todos os usuários". O app abre, faz login e clona; subir serviços e listar portas ainda não funciona.
-- **Linux (.deb e AppImage)**: já saem no `yarn dist` (x64 e ARM64). Funciona com o mesmo lsof/ps (ou um adapter
-  `ss -ltnp`); o `safeStorage` usa libsecret.
+As primeiras versões rodam apenas no macOS. Tudo que toca o SO continua passando por ports (`CommandRunner`,
+`PortScannerGateway`, `ProcessManagerGateway`, `ProcessKiller`, `ShellEnv`), então suportar outro sistema no futuro
+é escrever novos adapters no `container.ts` e voltar a ligar os alvos no `electron-builder.yml`, sem mexer em use
+case.
 
 ## Montar uma versão
 

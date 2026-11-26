@@ -1,4 +1,4 @@
-// Gera o ícone do app (build/icon.png 1024x1024, usado para .icns, .ico, .deb e dock em dev).
+// Gera o ícone do app (build/icon.png 1024x1024, usado para o .icns e o Dock em dev).
 // Estilo painel de telemetria: placa azul-marinho quase preta, matriz de LEDs apagados ao fundo
 // e o símbolo do Berrante (a peça "cadeirinha"/Z do Tetris) em LEDs azuis acesos.
 // Desenho procedural — original, sem assets de terceiros.

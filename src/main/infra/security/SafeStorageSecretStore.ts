@@ -10,7 +10,7 @@ export interface SafeStorageLike {
 }
 
 /**
- * Cofre único cifrado com safeStorage (Keychain no macOS, libsecret no Linux, DPAPI no Windows).
+ * Cofre único cifrado com safeStorage (Keychain do macOS).
  * Se a criptografia não estiver disponível, falha — nunca grava em texto puro.
  */
 export class SafeStorageSecretStore implements SecretStore {

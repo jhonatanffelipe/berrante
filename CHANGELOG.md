@@ -26,10 +26,8 @@ Primeira versão pública.
 - **Visual de painel de telemetria:** números em matriz de pontos, 9 cores de destaque com fundo tingido pelo tom
   escolhido e o tema pronto **Drácula** (paleta oficial).
 - **Menu nativo e atalhos:** `⌘N`, `⌘↩`, `⇧⌘↩`, `⌘1`…`⌘9` e outros.
-- **Instaladores:** macOS (`.dmg`/`.zip`, Apple Silicon e Intel), Windows (assistente NSIS x64 e ARM64, com
-  escolha da pasta e de "só para mim" ou "todos os usuários") e Linux (`.deb` e AppImage, x64 e ARM64).
+- **Instaladores:** macOS (`.dmg`/`.zip`, Apple Silicon e Intel).
 
 ### Limitações conhecidas
-- **Windows:** instala e abre, mas ainda não sobe serviços nem lista portas.
-- **Linux:** pouco testado.
-- Apps não assinados: o Gatekeeper do macOS e o SmartScreen do Windows pedem confirmação na primeira abertura.
+- **Só macOS:** Windows e Linux não são suportados nas primeiras versões.
+- App não assinado: o Gatekeeper do macOS pede confirmação na primeira abertura.

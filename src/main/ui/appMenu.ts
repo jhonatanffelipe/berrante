@@ -20,53 +20,46 @@ const GITHUB_OAUTH_APPS = 'https://github.com/settings/developers'
  */
 export function buildAppMenu(deps: AppMenuDeps, projects: Project[]): Menu {
   const { send } = deps
-  const isMac = process.platform === 'darwin'
-
   const tropas: MenuItemConstructorOptions[] = projects.length
     ? projects.map((p, i) => ({
         label: p.name,
-        accelerator: i < 9 ? `CmdOrCtrl+${i + 1}` : undefined,
+        accelerator: i < 9 ? `Cmd+${i + 1}` : undefined,
         click: () => send({ type: 'project', id: p.id })
       }))
     : [{ label: 'Nenhuma tropa ainda', enabled: false }]
 
   const template: MenuItemConstructorOptions[] = [
-    ...(isMac
-      ? [
-          {
-            label: 'Berrante',
-            submenu: [
-              { label: 'Sobre o Berrante', role: 'about' },
-              { type: 'separator' },
-              { label: 'Configurações…', accelerator: 'Cmd+,', click: () => send({ type: 'go', view: 'settings' }) },
-              { type: 'separator' },
-              { label: 'Serviços', role: 'services' },
-              { type: 'separator' },
-              { label: 'Ocultar o Berrante', role: 'hide' },
-              { label: 'Ocultar outros', role: 'hideOthers' },
-              { label: 'Mostrar tudo', role: 'unhide' },
-              { type: 'separator' },
-              { label: 'Sair do Berrante', role: 'quit' }
-            ]
-          } satisfies MenuItemConstructorOptions
-        ]
-      : []),
+    {
+      label: 'Berrante',
+      submenu: [
+        { label: 'Sobre o Berrante', role: 'about' },
+        { type: 'separator' },
+        { label: 'Configurações…', accelerator: 'Cmd+,', click: () => send({ type: 'go', view: 'settings' }) },
+        { type: 'separator' },
+        { label: 'Serviços', role: 'services' },
+        { type: 'separator' },
+        { label: 'Ocultar o Berrante', role: 'hide' },
+        { label: 'Ocultar outros', role: 'hideOthers' },
+        { label: 'Mostrar tudo', role: 'unhide' },
+        { type: 'separator' },
+        { label: 'Sair do Berrante', role: 'quit' }
+      ]
+    },
     {
       label: 'Tropa',
       submenu: [
-        { label: 'Nova tropa…', accelerator: 'CmdOrCtrl+N', click: () => send({ type: 'newProject' }) },
-        { label: 'Editar tropa…', accelerator: 'CmdOrCtrl+E', click: () => send({ type: 'editProject' }) },
+        { label: 'Nova tropa…', accelerator: 'Cmd+N', click: () => send({ type: 'newProject' }) },
+        { label: 'Editar tropa…', accelerator: 'Cmd+E', click: () => send({ type: 'editProject' }) },
         { type: 'separator' },
-        { label: 'Tocar o berrante', accelerator: 'CmdOrCtrl+Enter', click: () => send({ type: 'play' }) },
-        { label: 'Recolher a boiada', accelerator: 'CmdOrCtrl+Shift+Enter', click: () => send({ type: 'stop' }) },
+        { label: 'Tocar o berrante', accelerator: 'Cmd+Enter', click: () => send({ type: 'play' }) },
+        { label: 'Recolher a boiada', accelerator: 'Cmd+Shift+Enter', click: () => send({ type: 'stop' }) },
         { label: 'Recolher todas as tropas', click: deps.stopEverything },
         { type: 'separator' },
-        { label: 'Ver a boiada', accelerator: 'CmdOrCtrl+Alt+1', click: () => send({ type: 'tab', tab: 'boiada' }) },
-        { label: 'Ver o plano de subida', accelerator: 'CmdOrCtrl+Alt+2', click: () => send({ type: 'tab', tab: 'plano' }) },
+        { label: 'Ver a boiada', accelerator: 'Cmd+Alt+1', click: () => send({ type: 'tab', tab: 'boiada' }) },
+        { label: 'Ver o plano de subida', accelerator: 'Cmd+Alt+2', click: () => send({ type: 'tab', tab: 'plano' }) },
         { type: 'separator' },
         { label: 'Tropas', enabled: false },
-        ...tropas,
-        ...(isMac ? [] : ([{ type: 'separator' }, { label: 'Sair', role: 'quit' }] satisfies MenuItemConstructorOptions[]))
+        ...tropas
       ]
     },
     {
@@ -84,9 +77,8 @@ export function buildAppMenu(deps: AppMenuDeps, projects: Project[]): Menu {
     {
       label: 'Ver',
       submenu: [
-        { label: 'Repositórios', accelerator: 'CmdOrCtrl+Shift+R', click: () => send({ type: 'go', view: 'repos' }) },
-        { label: 'Contar a boiada', accelerator: 'CmdOrCtrl+Shift+P', click: () => send({ type: 'go', view: 'ports' }) },
-        ...(isMac ? [] : ([{ label: 'Configurações', accelerator: 'Ctrl+,', click: () => send({ type: 'go', view: 'settings' }) }] satisfies MenuItemConstructorOptions[])),
+        { label: 'Repositórios', accelerator: 'Cmd+Shift+R', click: () => send({ type: 'go', view: 'repos' }) },
+        { label: 'Contar a boiada', accelerator: 'Cmd+Shift+P', click: () => send({ type: 'go', view: 'ports' }) },
         { type: 'separator' },
         { label: 'Tamanho real', role: 'resetZoom' },
         { label: 'Aumentar', role: 'zoomIn' },
@@ -109,7 +101,8 @@ export function buildAppMenu(deps: AppMenuDeps, projects: Project[]): Menu {
         { label: 'Minimizar', role: 'minimize' },
         { label: 'Zoom', role: 'zoom' },
         { label: 'Fechar janela', role: 'close' },
-        ...(isMac ? ([{ type: 'separator' }, { label: 'Trazer tudo para a frente', role: 'front' }] satisfies MenuItemConstructorOptions[]) : [])
+        { type: 'separator' },
+        { label: 'Trazer tudo para a frente', role: 'front' }
       ]
     },
     {
