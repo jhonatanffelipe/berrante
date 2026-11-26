@@ -157,9 +157,23 @@ export interface GithubGateway {
   ): Promise<{ status: 'pending' | 'slow_down' | 'expired' | 'denied'; interval?: number } | { status: 'authorized'; token: string }>
 }
 
+export interface GitBranchState {
+  branch: string | null
+  upstream: string | null
+  ahead: number
+  behind: number
+  changes: number
+}
+
 export interface GitGateway {
   clone(url: string, dest: string, token: string | null): Promise<string>
   pull(repoPath: string, token: string | null): Promise<string>
+  fetch(repoPath: string, token: string | null): Promise<void>
+  status(repoPath: string): Promise<GitBranchState>
+  /** Branches locais e de origin (sem o prefixo `origin/`), sem repetição. */
+  branches(repoPath: string): Promise<string[]>
+  /** `git switch`: cria a branch local rastreando origin quando ela só existe lá. */
+  switchBranch(repoPath: string, branch: string): Promise<string>
   originUrl(repoPath: string): Promise<string | null>
   isRepo(path: string): Promise<boolean>
 }

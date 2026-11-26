@@ -83,6 +83,16 @@ import { ListContainersUseCase } from './application/containers/ListContainersUs
 import { ContainerActionUseCase } from './application/containers/ContainerActionUseCase'
 import { GetProjectContainersUseCase } from './application/containers/GetProjectContainersUseCase'
 import { ProjectContainerActionUseCase } from './application/containers/ProjectContainerActionUseCase'
+import { ProjectRepos } from './application/projects/ProjectRepos'
+import { GetProjectGitStatusUseCase } from './application/git/GetProjectGitStatusUseCase'
+import { PullProjectUseCase } from './application/git/PullProjectUseCase'
+import { ListProjectBranchesUseCase } from './application/git/ListProjectBranchesUseCase'
+import { SwitchProjectBranchUseCase } from './application/git/SwitchProjectBranchUseCase'
+import { CheckEnvUseCase } from './application/env/CheckEnvUseCase'
+import { FixEnvUseCase } from './application/env/FixEnvUseCase'
+import { PreflightUseCase } from './application/runtime/PreflightUseCase'
+import { OpenRepoTerminalUseCase } from './application/github/OpenRepoTerminalUseCase'
+import { OpenLocalPortUseCase } from './application/ports/OpenLocalPortUseCase'
 
 declare const __GITHUB_CLIENT_ID__: string
 
@@ -125,6 +135,8 @@ export function buildContainer(getWindow: () => BrowserWindow | null) {
   const catalog = new RepoCatalog(github)
   const detect = new DetectStartupPlanUseCase(projects, localRepos, inspector, clock, logger)
   const getProject = new GetProjectUseCase(projects)
+  const projectRepos = new ProjectRepos(getProject, localRepos)
+  const checkEnv = new CheckEnvUseCase(getProject, detect)
 
   const portHints = async (project: Project): Promise<Map<string, number[]>> => {
     const hints = new Map<string, number[]>()
@@ -173,6 +185,13 @@ export function buildContainer(getWindow: () => BrowserWindow | null) {
       listLocalRepos: new ListLocalReposUseCase(localRepos),
       removeLocalRepo: new RemoveLocalRepoUseCase(localRepos, projects, clock),
       revealRepo: new RevealRepoUseCase(localRepos, shell),
+      openRepoTerminal: new OpenRepoTerminalUseCase(localRepos, settings, terminal),
+      // git da tropa
+      gitStatus: new GetProjectGitStatusUseCase(projectRepos, git, session, logger),
+      pullAll: new PullProjectUseCase(projectRepos, git, session, logger),
+      branches: new ListProjectBranchesUseCase(projectRepos, git),
+      checkout: new SwitchProjectBranchUseCase(projectRepos, git, logger),
+      fixEnv: new FixEnvUseCase(projectRepos, envFiles, logger),
       // projetos
       listProjects: new ListProjectsUseCase(projects),
       getProject,

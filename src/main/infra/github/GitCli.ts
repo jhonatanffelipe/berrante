@@ -1,8 +1,9 @@
 import { chmod, mkdir, writeFile } from 'node:fs/promises'
 import { dirname } from 'node:path'
-import type { CommandRunner, GitGateway } from '@main/domain/ports'
+import type { CommandRunner, GitBranchState, GitGateway } from '@main/domain/ports'
 import { AppError } from '@main/domain/errors/AppError'
 import { redact } from '../logging/RedactingLogger'
+import { parseBranchRefs, parseGitStatus } from './gitStatusParser'
 
 const ASKPASS_SCRIPT = `#!/bin/sh
 case "$1" in
@@ -45,6 +46,23 @@ export class GitCli implements GitGateway {
 
   pull(repoPath: string, token: string | null): Promise<string> {
     return this.git(['pull', '--ff-only'], token, repoPath)
+  }
+
+  async fetch(repoPath: string, token: string | null): Promise<void> {
+    await this.git(['fetch', '--prune', 'origin'], token, repoPath, 2 * 60_000)
+  }
+
+  async status(repoPath: string): Promise<GitBranchState> {
+    return parseGitStatus(await this.git(['status', '--porcelain=v2', '--branch'], null, repoPath, 15_000))
+  }
+
+  async branches(repoPath: string): Promise<string[]> {
+    return parseBranchRefs(await this.git(['for-each-ref', '--format=%(refname:short)', 'refs/heads', 'refs/remotes/origin'], null, repoPath, 15_000))
+  }
+
+  switchBranch(repoPath: string, branch: string): Promise<string> {
+    if (branch.startsWith('-')) throw AppError.validation('Nome de branch inválido')
+    return this.git(['switch', branch], null, repoPath, 60_000)
   }
 
   async originUrl(repoPath: string): Promise<string | null> {

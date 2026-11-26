@@ -46,6 +46,14 @@ const projectInput = z.object({
 })
 
 const none = z.undefined().optional()
+/** Nome de branch seguro para virar argv do git (sem opção disfarçada, sem `..`). */
+const branchName = z
+  .string()
+  .min(1)
+  .max(200)
+  .regex(/^[A-Za-z0-9][A-Za-z0-9._\/-]*$/, 'Nome de branch inválido')
+  .refine((b) => !b.includes('..') && !b.endsWith('/') && !b.endsWith('.lock'), 'Nome de branch inválido')
+const profileId = z.string().min(1).max(80).nullable().optional()
 
 export const ipcSchemas = {
   'app:info': none,
@@ -90,6 +98,11 @@ export const ipcSchemas = {
   'projects:delete': z.object({ id }),
   'projects:pickWorkspace': z.object({ defaultPath: absolutePath.optional() }),
   'projects:openWorkspace': z.object({ id }),
+  'projects:gitStatus': z.object({ projectId: id, fetch: z.boolean().optional() }),
+  'projects:pullAll': z.object({ projectId: id }),
+  'projects:branches': z.object({ projectId: id }),
+  'projects:checkout': z.object({ projectId: id, branch: branchName }),
+  'projects:fixEnv': z.object({ projectId: id, repoId: id }),
 
   'startup:detect': z.object({ projectId: id }),
   'startup:savePlan': z.object({ projectId: id, plan: startupPlanSchema }),

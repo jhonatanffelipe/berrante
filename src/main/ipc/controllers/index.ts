@@ -34,6 +34,11 @@ export function buildHandlers(uc: UseCases): Handlers {
     'projects:delete': (i) => uc.deleteProject.execute(i.id),
     'projects:pickWorkspace': (i) => uc.pickWorkspace.execute(i.defaultPath),
     'projects:openWorkspace': (i) => uc.openWorkspace.execute(i.id),
+    'projects:gitStatus': (i) => uc.gitStatus.execute(i.projectId, i.fetch),
+    'projects:pullAll': (i) => uc.pullAll.execute(i.projectId),
+    'projects:branches': (i) => uc.branches.execute(i.projectId),
+    'projects:checkout': (i) => uc.checkout.execute(i.projectId, i.branch),
+    'projects:fixEnv': (i) => uc.fixEnv.execute(i.projectId, i.repoId),
 
     'startup:detect': (i) => uc.detectPlan.execute(i.projectId),
     'startup:savePlan': (i) => uc.savePlan.execute(i.projectId, i.plan),

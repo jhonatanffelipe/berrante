@@ -1,9 +1,13 @@
-import type { LocalRepository, Project, ProjectRuntime } from '@shared/types'
+import type { LocalRepository, Project, ProjectRuntime, RepoGitStatus } from '@shared/types'
 import { isLongRunning } from '@shared/workflow'
 import { PixelBlock } from '../../components/ui/PixelBlock'
 import { PixelButton } from '../../components/ui/PixelButton'
 import { SegmentBar } from '../../components/ui/SegmentBar'
 import { shortPath } from '../../lib/format'
+import { call, errorMessage } from '../../lib/api'
+import { Badge } from '../../components/ui/Badge'
+import { Tip } from '../../components/ui/Term'
+import { useToast } from '../../components/ui/Toast'
 import { ServiceRow } from './ServiceRow'
 
 interface Props {
@@ -11,10 +15,47 @@ interface Props {
   repo: LocalRepository
   runtime: ProjectRuntime | null
   now: number
+  git: RepoGitStatus | undefined
   onAction: (repoId: string, name: string) => void
 }
 
-export function RepoCard({ project, repo, runtime, now, onAction }: Props) {
+/** Marcação do git no cabeçalho: branch, alterações não salvas e commits à frente/atrás. */
+function GitMark({ git }: { git: RepoGitStatus }) {
+  if (git.error) return <Badge tone="line">sem git</Badge>
+  return (
+    <span className="flex items-center gap-1.5">
+      <Tip label={git.upstream ? `rastreando ${git.upstream}` : 'sem branch remota'}>
+        <span>
+          <Badge tone={git.branch ? 'cyan' : 'orange'}>⎇ {git.branch ?? 'detached'}</Badge>
+        </span>
+      </Tip>
+      {git.changes ? (
+        <Tip label="Arquivos modificados ou não rastreados">
+          <span>
+            <Badge tone="orange">✎ {git.changes}</Badge>
+          </span>
+        </Tip>
+      ) : null}
+      {git.ahead ? (
+        <Tip label="Commits que ainda não subiram (push)">
+          <span>
+            <Badge tone="purple">↑{git.ahead}</Badge>
+          </span>
+        </Tip>
+      ) : null}
+      {git.behind ? (
+        <Tip label="Commits novos no remoto (faça pull)">
+          <span>
+            <Badge tone="yellow">↓{git.behind}</Badge>
+          </span>
+        </Tip>
+      ) : null}
+    </span>
+  )
+}
+
+export function RepoCard({ project, repo, runtime, now, git, onAction, onOpenPort }: Props) {
+  const toast = useToast()
   const services = (project.plan?.services ?? []).filter((s) => s.repoId === repo.id).sort((a, b) => a.order - b.order)
   const actions = (project.plan?.actions ?? []).filter((a) => a.repoId === repo.id)
   const byId = new Map((runtime?.services ?? []).map((s) => [s.serviceId, s]))
@@ -25,6 +66,7 @@ export function RepoCard({ project, repo, runtime, now, onAction }: Props) {
     <PixelBlock className="animate-block-drop overflow-hidden">
       <header className="flex items-center gap-4 border-b border-line/60 px-5 py-3">
         <span className="label shrink-0 whitespace-nowrap">{repo.name}</span>
+        {git ? <GitMark git={git} /> : null}
         <span className="min-w-0 truncate font-mono text-[11px] text-comment">{shortPath(repo.path)}</span>
         <div className="ml-auto flex shrink-0 items-center gap-3">
           <SegmentBar value={playable.length ? running / playable.length : 0} segments={Math.max(playable.length * 3, 6)} height={10} />

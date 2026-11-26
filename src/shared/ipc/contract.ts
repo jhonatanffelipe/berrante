@@ -5,6 +5,10 @@ import type {
   AiCliStatus,
   AiWorkflowSuggestion,
   AuthStatus,
+  BranchOption,
+  Preflight,
+  RepoGitResult,
+  RepoGitStatus,
   ContainerList,
   DetectionResult,
   DeviceFlowPoll,
@@ -60,6 +64,11 @@ export interface IpcOutputs {
   'projects:delete': void
   'projects:pickWorkspace': string | null
   'projects:openWorkspace': void
+  'projects:gitStatus': RepoGitStatus[]
+  'projects:pullAll': RepoGitResult[]
+  'projects:branches': BranchOption[]
+  'projects:checkout': RepoGitResult[]
+  'projects:fixEnv': void
 
   'startup:detect': DetectionResult
   'startup:savePlan': Project
