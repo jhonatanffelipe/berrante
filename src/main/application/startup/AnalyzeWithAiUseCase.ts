@@ -1,36 +1,36 @@
 import { dirname, relative, resolve } from 'node:path'
 import { z } from 'zod'
-import type { AiPlanSuggestion, LocalRepository, ServiceDefinition, StartupPlan } from '@shared/types'
+import type { AiWorkflowStep, AiWorkflowSuggestion, LocalRepository, ServiceDefinition, StartupPlan } from '@shared/types'
 import type { LocalRepositoryRepository, ProjectRepository, SettingsRepository } from '@main/domain/repositories'
-import type { AiCliGateway, Clock, Logger } from '@main/domain/ports'
+import type { AiCliGateway, Logger } from '@main/domain/ports'
 import { AppError } from '@main/domain/errors/AppError'
-import { diffPlans, orderServices } from '@main/domain/entities/ServiceDefinition'
 import type { TotpGuard } from '../security/TotpGuard'
 import type { DetectStartupPlanUseCase } from './DetectStartupPlanUseCase'
 import { isInside } from './pathGuard'
 
-export const AI_PLAN_SCHEMA = {
+const WAIT_FOR = ['exit', 'port', 'start'] as const
+
+export const AI_WORKFLOW_SCHEMA = {
   type: 'object',
   additionalProperties: false,
-  required: ['services', 'notes'],
+  required: ['steps', 'notes'],
   properties: {
-    notes: { type: 'string', description: 'Observações curtas em português' },
-    services: {
+    notes: { type: 'string', description: 'Observações curtas em português (o que conferir antes de subir)' },
+    steps: {
       type: 'array',
+      description: 'Passos na ordem em que um dev roda no terminal',
       items: {
         type: 'object',
         additionalProperties: false,
-        required: ['repo', 'name', 'kind', 'command', 'enabled', 'dependsOn'],
+        required: ['repo', 'name', 'command', 'waitFor', 'reason'],
         properties: {
           repo: { type: 'string', description: 'Nome do repositório (pasta)' },
-          name: { type: 'string' },
-          kind: { type: 'string', enum: ['setup', 'compose', 'script', 'command'] },
-          command: { type: 'string', description: 'Comando de shell; para kind=compose, o nome do serviço do compose' },
-          composeFile: { type: 'string' },
-          cwd: { type: 'string', description: 'Relativo à raiz do repo' },
+          folder: { type: 'string', description: 'Subpasta relativa à raiz do repo; omita ou "." para a raiz' },
+          name: { type: 'string', description: 'Nome curto do passo' },
+          command: { type: 'string', description: 'Comando de shell exatamente como no terminal' },
+          waitFor: { type: 'string', enum: WAIT_FOR, description: 'exit = espera terminar; port = espera abrir porta; start = segue após iniciar' },
           env: { type: 'object', additionalProperties: { type: 'string' } },
-          enabled: { type: 'boolean' },
-          dependsOn: { type: 'array', items: { type: 'string', description: 'repo/name' } }
+          reason: { type: 'string', description: 'Por que este passo, nesta posição (1 frase)' }
         }
       }
     }
@@ -39,21 +39,19 @@ export const AI_PLAN_SCHEMA = {
 
 const aiResponse = z.object({
   notes: z.string().max(4000).optional().default(''),
-  services: z
+  steps: z
     .array(
       z.object({
         repo: z.string().min(1).max(200),
+        folder: z.string().max(500).optional(),
         name: z.string().min(1).max(120),
-        kind: z.enum(['setup', 'compose', 'script', 'command']),
         command: z.string().min(1).max(2000),
-        composeFile: z.string().max(300).optional(),
-        cwd: z.string().max(500).optional(),
+        waitFor: z.enum(WAIT_FOR),
         env: z.record(z.string().regex(/^[A-Za-z_][A-Za-z0-9_]*$/), z.string().max(2000)).optional(),
-        enabled: z.boolean(),
-        dependsOn: z.array(z.string().max(300)).max(50)
+        reason: z.string().max(500).optional().default('')
       })
     )
-    .max(100)
+    .max(60)
 })
 
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60) || 'svc'
@@ -70,8 +68,9 @@ function commonDir(paths: string[]): string {
 }
 
 /**
- * Fallback com IA: a CLI local lê os repos (somente leitura) e devolve um plano JSON.
- * Nada é executado nem salvo aqui — o renderer mostra o diff e o usuário confirma.
+ * IA como sugestão de workflow: a CLI local lê os repos (somente leitura) e propõe a sequência
+ * de comandos que um dev rodaria no terminal. Nada é executado nem salvo aqui: o renderer mostra
+ * a sugestão e o usuário escolhe o que entra no plano.
  */
 export class AnalyzeWithAiUseCase {
   constructor(
@@ -81,11 +80,10 @@ export class AnalyzeWithAiUseCase {
     private readonly detect: DetectStartupPlanUseCase,
     private readonly ai: AiCliGateway,
     private readonly guard: TotpGuard,
-    private readonly clock: Clock,
     private readonly logger: Logger
   ) {}
 
-  async execute(projectId: string, totpCode?: string): Promise<AiPlanSuggestion> {
+  async execute(projectId: string, totpCode?: string): Promise<AiWorkflowSuggestion> {
     const settings = await this.settings.get()
     if (!settings.aiEnabled) throw new AppError('VALIDATION', 'Habilite a integração com IA nas configurações (exige 2FA)')
     await this.guard.require('ai', totpCode)
@@ -108,72 +106,61 @@ export class AnalyzeWithAiUseCase {
       warnings: d.warnings
     }))
     const prompt = [
-      'Você está ajudando o app Berrante a montar o plano de subida LOCAL (desenvolvimento) de um projeto com vários repositórios.',
-      'Leia README, package.json, docker-compose e arquivos de config dos repositórios abaixo (somente leitura; não execute nada).',
-      'Devolva APENAS o JSON no schema pedido, com os serviços na ordem de subida.',
-      'Regras: kind=compose usa o nome do serviço do compose em "command"; scripts longos (dev/watch/worker) são kind=script;',
-      'etapas que terminam (redes, install, migrations obrigatórias) são kind=setup; dependsOn usa "repo/name".',
-      'Não invente comandos que não estejam documentados ou implícitos nos arquivos.',
+      'Você está ajudando o app Berrante a sugerir o WORKFLOW de subida local (desenvolvimento) de um projeto com vários repositórios.',
+      'Leia README, package.json, docker-compose, .env.example e configs dos repositórios abaixo (somente leitura; não execute nada).',
+      'Pense como o dev faria à mão no terminal, um passo de cada vez, e devolva APENAS o JSON no schema pedido, na ordem de execução.',
+      'Regras:',
+      '- Containers: UM passo "docker compose up -d" por repositório que tiver compose (não um por container), com waitFor=exit.',
+      '- Infra primeiro (redes, containers de banco/fila/logs), depois a API (dev server, waitFor=port),',
+      '  depois workers/filas que dependem da API (waitFor=start) e por último o front-end (waitFor=port).',
+      '- Preparos que terminam (install, migrations obrigatórias, docker network create) usam waitFor=exit; inclua só se forem necessários para subir.',
+      '- Use os comandos exatamente como estão nos scripts/README, com o gerenciador de pacotes certo (yarn, pnpm, npm, bun).',
+      '- Não invente comandos que não estejam documentados ou implícitos nos arquivos. Em "reason", explique em 1 frase o porquê da posição.',
       '',
-      `Detecção determinística atual: ${JSON.stringify(summary)}`,
-      `Plano atual: ${JSON.stringify(current.services.map((s) => ({ repo: repos.find((r) => r.id === s.repoId)?.name, name: s.name, kind: s.kind, command: s.command, enabled: s.enabled })))}`
+      `Detecção automática: ${JSON.stringify(summary)}`,
+      `Workflow atual do usuário: ${JSON.stringify([...current.services].sort((a, b) => a.order - b.order).map((s) => ({ repo: repos.find((r) => r.id === s.repoId)?.name, name: s.name, command: s.command, enabled: s.enabled })))}`
     ].join('\n')
 
     const started = Date.now()
-    const raw = await this.ai.requestJson(settings.aiCli, prompt, AI_PLAN_SCHEMA, cwd)
+    const raw = await this.ai.requestJson(settings.aiCli, prompt, AI_WORKFLOW_SCHEMA, cwd)
     const parsed = aiResponse.safeParse(raw)
     if (!parsed.success) throw new AppError('AI', 'Resposta da IA fora do formato esperado', { issues: parsed.error.issues.slice(0, 5) })
 
-    const plan = this.toPlan(parsed.data, repos, current)
-    this.logger.info('startup.ai.suggested', { projectId, cli: settings.aiCli, services: plan.services.length, durationMs: Date.now() - started })
-    return { cli: settings.aiCli, plan, diff: diffPlans(current, plan), notes: parsed.data.notes || null }
+    const steps = this.toSteps(parsed.data, repos, current)
+    this.logger.info('startup.ai.suggested', { projectId, cli: settings.aiCli, steps: steps.length, durationMs: Date.now() - started })
+    return { cli: settings.aiCli, steps, notes: parsed.data.notes || null }
   }
 
-  private toPlan(data: z.infer<typeof aiResponse>, repos: LocalRepository[], current: StartupPlan): StartupPlan {
+  /** Converte a resposta em passos válidos: repo conhecido, pasta dentro dele; ids reaproveitados quando o passo já existe. */
+  private toSteps(data: z.infer<typeof aiResponse>, repos: LocalRepository[], current: StartupPlan): AiWorkflowStep[] {
     const byName = new Map(repos.map((r) => [r.name.toLowerCase(), r]))
-    const keyToId = new Map<string, string>()
-    const services: ServiceDefinition[] = []
-
-    data.services.forEach((s, index) => {
+    const result: AiWorkflowStep[] = []
+    data.steps.forEach((s, index) => {
       const repo = byName.get(s.repo.toLowerCase()) ?? byName.get(s.repo.split(/[\\/]/).pop()?.toLowerCase() ?? '')
       if (!repo) return
-      const cwd = resolve(repo.path, s.cwd ?? '.')
+      const cwd = resolve(repo.path, s.folder ?? '.')
       if (!isInside(repo.path, cwd)) return
-      const match =
-        current.services.find((c) => c.repoId === repo.id && c.kind === s.kind && c.command === s.command) ??
-        current.services.find((c) => c.repoId === repo.id && c.name === s.name)
+      const match = current.services.find((c) => c.cwd === cwd && c.command.trim() === s.command.trim())
       let id = match?.id ?? `ai:${repo.id}:${slug(s.name)}`
-      while (services.some((x) => x.id === id)) id = `${id}-${index}`
-      keyToId.set(`${repo.name}/${s.name}`.toLowerCase(), id)
-      services.push({
+      while (result.some((x) => x.step.id === id)) id = `${id}-${index}`
+      const step: ServiceDefinition = {
         id,
         repoId: repo.id,
         name: s.name,
-        kind: s.kind,
+        kind: s.waitFor === 'exit' ? 'setup' : 'command',
         command: s.command,
-        composeFile: s.kind === 'compose' ? (s.composeFile ?? match?.composeFile ?? 'docker-compose.yml') : null,
+        composeFile: null,
         cwd,
         env: s.env ?? match?.env ?? {},
-        enabled: s.enabled,
+        enabled: true,
         order: index * 10,
-        dependsOn: s.dependsOn,
+        waitFor: s.waitFor,
+        dependsOn: [],
         color: match?.color ?? 'purple',
         origin: match?.origin ?? 'ai'
-      })
+      }
+      result.push({ step, reason: s.reason })
     })
-
-    for (const svc of services) {
-      svc.dependsOn = svc.dependsOn
-        .map((d) => keyToId.get(d.toLowerCase()) ?? keyToId.get(`${repos.find((r) => r.id === svc.repoId)?.name}/${d}`.toLowerCase()))
-        .filter((d): d is string => Boolean(d) && d !== svc.id)
-    }
-    try {
-      orderServices(services)
-    } catch {
-      services.forEach((s) => (s.dependsOn = []))
-    }
-    const now = this.clock.now().toISOString()
-    return { services, actions: current.actions, detectedAt: current.detectedAt, updatedAt: now }
+    return result
   }
 }
-

@@ -5,7 +5,8 @@ import { hostPorts, normalizePort, parseComposeYaml } from '@main/application/st
 import { checkEnv, parseEnvKeys } from '@main/application/startup/detectors/envCheck'
 import { detectRepo } from '@main/application/startup/detectors/repoDetector'
 import { buildPlan, mergePlans, serviceIds } from '@main/application/startup/detectors/planBuilder'
-import { diffPlans, orderServices, playableServices } from '@main/domain/entities/ServiceDefinition'
+import { flattenWorkflow, orderServices, playableServices } from '@main/domain/entities/ServiceDefinition'
+import { composeStopCommand } from '@shared/workflow'
 import type { RepoDetection } from '@shared/types'
 import { fixtureRepo, fixtureText } from '../helpers'
 
@@ -121,7 +122,7 @@ describe('detectRepo (fixtures fazenda)', () => {
     expect(d.packageManager).toEqual({ name: 'yarn', version: '1.22.22', source: 'packageManager', lockfile: 'yarn.lock' })
     expect(d.nodeModulesInstalled).toBe(true)
     expect(d.compose?.services.map((s) => s.name)).toEqual(['db', 'mailpit', 'redis', 'mongo'])
-    expect(d.scripts.filter((s) => s.category === 'service').map((s) => s.name)).toEqual(['dev', 'start'])
+    expect(d.scripts.filter((s) => s.category === 'service').map((s) => s.name)).toEqual(['dev', 'start', 'worker:start'])
     expect(d.scripts.find((s) => s.name === 'test:integration')?.category).toBe('action')
     expect(d.env).toMatchObject({ envExists: true, missingKeys: [] })
     expect(d.warnings).toContain('Docker indisponível: compose lido direto do YAML (variáveis não interpoladas)')
@@ -163,26 +164,23 @@ describe('buildPlan (tropa fazenda: backend + web + logs)', async () => {
     expect(nets[0]!.command).toBe('docker network inspect fazenda-network >/dev/null 2>&1 || docker network create fazenda-network')
   })
 
-  it('habilita só os containers do README (db, mailpit) e deixa profiles desligados', () => {
-    const enabled = plan.services.filter((s) => s.kind === 'compose' && s.repoId === 'fazenda-api' && s.enabled).map((s) => s.name)
-    expect(enabled).toEqual(['db', 'mailpit'])
-    expect(byId.get(serviceIds.compose('fazenda-api', 'redis'))?.enabled).toBe(false)
-    expect(plan.services.filter((s) => s.repoId === 'fazenda-logs' && s.enabled).map((s) => s.name)).toEqual(['loki', 'prometheus', 'grafana'])
+  it('cria um passo "docker compose up -d" por repo, com os serviços do README, que segue ao terminar', () => {
+    expect(byId.get(serviceIds.compose('fazenda-api'))).toMatchObject({ command: 'docker compose up -d db mailpit', waitFor: 'exit', enabled: true })
+    expect(byId.get(serviceIds.compose('fazenda-logs'))).toMatchObject({ command: 'docker compose up -d', waitFor: 'exit', enabled: true })
+    expect(plan.services.filter((s) => s.kind === 'compose')).toHaveLength(0)
   })
 
-  it('yarn dev do backend depende dos containers habilitados', () => {
-    const dev = byId.get(serviceIds.script('fazenda-api', 'dev'))!
-    expect(dev).toMatchObject({ command: 'yarn dev', enabled: true, kind: 'script' })
-    expect(dev.dependsOn).toEqual([serviceIds.compose('fazenda-api', 'db'), serviceIds.compose('fazenda-api', 'mailpit')])
-    expect(byId.get(serviceIds.script('fazenda-api', 'start'))?.enabled).toBe(false)
-  })
-
-  it('grafana depende de loki/prometheus e da rede', () => {
-    expect(byId.get(serviceIds.compose('fazenda-logs', 'grafana'))?.dependsOn).toEqual([
-      'net:fazenda-network',
-      serviceIds.compose('fazenda-logs', 'loki'),
-      serviceIds.compose('fazenda-logs', 'prometheus')
+  it('yarn dev segue ao abrir porta; o worker vem logo depois e segue ao iniciar', () => {
+    const api = plan.services.filter((s) => s.repoId === 'fazenda-api' && s.kind === 'script').map((s) => [s.name, s.waitFor, s.enabled])
+    expect(api).toEqual([
+      ['dev', 'port', true],
+      ['worker:start', 'start', true],
+      ['start', 'port', false]
     ])
+  })
+
+  it('não usa dependsOn: a ordem do workflow é a da lista', () => {
+    expect(plan.services.every((s) => s.dependsOn.length === 0)).toBe(true)
   })
 
   it('scripts de ação e comandos extras do README viram botões', () => {
@@ -194,11 +192,16 @@ describe('buildPlan (tropa fazenda: backend + web + logs)', async () => {
     expect(backend).not.toContain('docker compose up -d db mailpit')
   })
 
-  it('a ordem de subida respeita rede → containers → scripts', () => {
+  it('a ordem é rede → containers de todos os repos → back-end → front-end', () => {
+    const web = buildPlan([detections[1]!, detections[0]!, detections[2]!], NOW)
+    const ids = playableServices(web).map((s) => s.id)
+    expect(ids.indexOf(serviceIds.script('fazenda-api', 'worker:start'))).toBeLessThan(ids.indexOf(serviceIds.script('fazenda-web', 'dev')))
+
     const order = playableServices(plan).map((s) => s.id)
-    expect(order.indexOf('net:fazenda-network')).toBe(0)
-    expect(order.indexOf(serviceIds.compose('fazenda-api', 'db'))).toBeLessThan(order.indexOf(serviceIds.script('fazenda-api', 'dev')))
-    expect(order.indexOf(serviceIds.compose('fazenda-logs', 'loki'))).toBeLessThan(order.indexOf(serviceIds.compose('fazenda-logs', 'grafana')))
+    expect(order[0]).toBe('net:fazenda-network')
+    expect(order.indexOf(serviceIds.compose('fazenda-logs'))).toBeLessThan(order.indexOf(serviceIds.script('fazenda-api', 'dev')))
+    expect(order.indexOf(serviceIds.script('fazenda-api', 'dev'))).toBeLessThan(order.indexOf(serviceIds.script('fazenda-api', 'worker:start')))
+    expect(order.indexOf(serviceIds.script('fazenda-api', 'worker:start'))).toBeLessThan(order.indexOf(serviceIds.script('fazenda-web', 'dev')))
   })
 
   it('é determinístico', () => {
@@ -220,13 +223,35 @@ describe('buildPlan (tropa fazenda: backend + web + logs)', async () => {
     expect(merged.services.some((s) => s.id === 'manual:1')).toBe(true)
   })
 
-  it('diffPlans aponta adicionados, removidos e alterados', () => {
-    const next = { ...plan, services: plan.services.slice(1).map((s, i) => (i === 0 ? { ...s, command: 'x' } : s)) }
-    next.services.push({ ...plan.services[0]!, id: 'ai:1', name: 'novo', origin: 'ai' })
-    const diff = diffPlans(plan, next)
-    expect(diff.find((d) => d.type === 'removed')?.serviceId).toBe('net:fazenda-network')
-    expect(diff.find((d) => d.type === 'added')?.serviceId).toBe('ai:1')
-    expect(diff.find((d) => d.type === 'changed')?.fields).toEqual(['command'])
+  it('mergePlans sobre plano antigo (sem waitFor) usa ordem e "segue ao" da detecção nova', () => {
+    const old = plan.services.map((s) => {
+      const { waitFor: _w, ...rest } = s
+      return s.id === serviceIds.script('fazenda-api', 'worker:start') ? { ...rest, order: 0 } : { ...rest, order: s.order + 1 }
+    })
+    const merged = mergePlans({ ...plan, services: old }, buildPlan(detections, NOW))
+    const ids = merged.services.map((s) => s.id)
+    expect(ids.indexOf(serviceIds.script('fazenda-api', 'dev'))).toBeLessThan(ids.indexOf(serviceIds.script('fazenda-api', 'worker:start')))
+    expect(merged.services.find((s) => s.id === serviceIds.script('fazenda-api', 'worker:start'))?.waitFor).toBe('start')
+  })
+
+  it('mergePlans descarta as linhas antigas de um container por serviço', () => {
+    const legacy = { ...plan.services[0]!, id: 'fazenda-api:compose:db', name: 'db', kind: 'compose' as const, command: 'db', origin: 'detected' as const }
+    const merged = mergePlans({ ...plan, services: [...plan.services, legacy] }, buildPlan(detections, NOW))
+    expect(merged.services.some((s) => s.id === legacy.id)).toBe(false)
+  })
+})
+
+describe('composeStopCommand', () => {
+  it.each([
+    ['docker compose up -d', 'docker compose stop'],
+    ['docker compose up -d db mailpit', 'docker compose stop db mailpit'],
+    ['docker compose -f docker-compose.dev.yml up -d', 'docker compose -f docker-compose.dev.yml stop'],
+    ['docker-compose up -d --build api', 'docker-compose stop api']
+  ])('%s → %s', (up, stop) => expect(composeStopCommand(up)).toBe(stop))
+
+  it('ignora o que não é compose up ou tem encadeamento', () => {
+    expect(composeStopCommand('yarn dev')).toBeNull()
+    expect(composeStopCommand('docker compose up -d && yarn dev')).toBeNull()
   })
 })
 
@@ -236,5 +261,17 @@ describe('orderServices', () => {
     const a = { ...base, id: 'a', name: 'a', command: 'a', order: 0, dependsOn: ['b'] }
     const b = { ...base, id: 'b', name: 'b', command: 'b', order: 1, dependsOn: ['a'] }
     expect(() => orderServices([a, b])).toThrow(/circular/)
+  })
+})
+
+describe('flattenWorkflow', () => {
+  it('converte dependsOn legado em ordem linear e limpa o campo', () => {
+    const base = { repoId: 'r', kind: 'command' as const, composeFile: null, cwd: '/', env: {}, enabled: true, color: 'cyan' as const, origin: 'user' as const }
+    const a = { ...base, id: 'a', name: 'a', command: 'a', order: 0, dependsOn: ['b'] }
+    const b = { ...base, id: 'b', name: 'b', command: 'b', order: 5, dependsOn: [] }
+    expect(flattenWorkflow([a, b]).map((s) => [s.id, s.order, s.dependsOn])).toEqual([
+      ['b', 0, []],
+      ['a', 10, []]
+    ])
   })
 })

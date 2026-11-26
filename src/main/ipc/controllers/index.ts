@@ -36,6 +36,7 @@ export function buildHandlers(uc: UseCases): Handlers {
     'startup:detect': (i) => uc.detectPlan.execute(i.projectId),
     'startup:savePlan': (i) => uc.savePlan.execute(i.projectId, i.plan),
     'startup:analyzeWithAi': (i) => uc.analyzeWithAi.execute(i.projectId, i.totpCode),
+    'startup:pickFolder': (i) => uc.pickStepFolder.execute(i.projectId, i.defaultPath),
 
     'runtime:get': (i) => uc.getRuntime.execute(i.projectId),
     'runtime:checkConflicts': (i) => uc.checkConflicts.execute(i.projectId),

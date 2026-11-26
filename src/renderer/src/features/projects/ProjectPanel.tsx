@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import * as Menu from '@radix-ui/react-dropdown-menu'
 import type { PortConflict, Project } from '@shared/types'
 import { runtimeKey } from '@shared/runtime'
+import { isLongRunning, stepWaitFor } from '@shared/workflow'
 import { call, errorMessage } from '../../lib/api'
 import { useInterval } from '../../lib/useAsync'
 import { PixelButton } from '../../components/ui/PixelButton'
@@ -56,10 +57,10 @@ export function ProjectPanel({ project }: { project: Project }) {
   const projectRepos = project.repositoryIds.map((id) => repos.find((r) => r.id === id)).filter((r): r is NonNullable<typeof r> => Boolean(r))
   const anyActive = runtime?.services.some((s) => s.status === 'running' || s.status === 'starting') ?? false
   const plan = project.plan?.services ?? []
-  const playable = plan.filter((s) => s.enabled && s.kind !== 'setup')
+  const playable = plan.filter((s) => s.enabled && isLongRunning(s))
   const stateOf = new Map((runtime?.services ?? []).map((s) => [s.serviceId, s]))
   const running = playable.filter((s) => stateOf.get(s.id)?.status === 'running').length
-  const counts = { compose: plan.filter((s) => s.kind === 'compose').length, script: plan.filter((s) => s.kind === 'script').length, setup: plan.filter((s) => s.kind === 'setup').length }
+  const counts = { steps: plan.filter((s) => s.enabled).length, oneShot: plan.filter((s) => s.enabled && stepWaitFor(s) === 'exit' && s.kind !== 'compose').length }
   const ports = [...new Set((runtime?.services ?? []).flatMap((s) => s.ports))].sort((a, b) => a - b)
 
   const play = async (ignoreConflicts = false) => {
@@ -71,7 +72,7 @@ export function ProjectPanel({ project }: { project: Project }) {
         setConflicts(result.conflicts)
         return
       }
-      if (result.skipped.length) toast({ title: 'Parte da boiada ficou', body: `${result.skipped.length} serviço(s) pulado(s) por dependência que falhou.`, accent: 'orange' })
+      if (result.skipped.length) toast({ title: 'O workflow parou no meio', body: `Um passo falhou e ${result.skipped.length} passo(s) seguinte(s) não rodaram. Veja o log.`, accent: 'orange' })
     } catch (err) {
       toast({ title: 'O berrante falhou', body: errorMessage(err), accent: 'red' })
     } finally {
@@ -139,8 +140,8 @@ export function ProjectPanel({ project }: { project: Project }) {
             <span className="mb-1 font-mono text-xl font-bold text-fg">de pé</span>
           </div>
           <p className="mt-4 text-[13px] text-fg/80">
-            <b className="text-fg">{playable.length}</b> no play · <b className="text-fg">{counts.compose}</b> container(s) · <b className="text-fg">{counts.script}</b> script(s) ·{' '}
-            <b className="text-fg">{counts.setup}</b> preparo(s) · <b className="text-fg">{project.plan?.actions.length ?? 0}</b> ação(ões)
+            <b className="text-fg">{counts.steps}</b> passo(s) no workflow · <b className="text-fg">{playable.length}</b> fica(m) de pé · <b className="text-fg">{counts.oneShot}</b> roda(m) e termina(m) ·{' '}
+            <b className="text-fg">{project.plan?.actions.length ?? 0}</b> ação(ões)
           </p>
         </div>
         <div className="flex min-w-0 flex-col justify-between gap-4 border-l border-line/60 pl-6">

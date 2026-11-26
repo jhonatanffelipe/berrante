@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto'
 import { join } from 'node:path'
 import type { Project } from '@shared/types'
 import { ShellEnv } from './infra/platform/ShellEnv'
+import { composeStopCommand } from '@shared/workflow'
 import { NodeCommandRunner } from './infra/platform/NodeCommandRunner'
 import { RedactingLogger } from './infra/logging/RedactingLogger'
 import {
@@ -59,6 +60,7 @@ import { GetProjectUseCase } from './application/projects/GetProjectUseCase'
 import { CreateProjectUseCase } from './application/projects/CreateProjectUseCase'
 import { UpdateProjectUseCase } from './application/projects/UpdateProjectUseCase'
 import { DeleteProjectUseCase } from './application/projects/DeleteProjectUseCase'
+import { PickStepFolderUseCase } from './application/startup/PickStepFolderUseCase'
 import { DetectStartupPlanUseCase } from './application/startup/DetectStartupPlanUseCase'
 import { SaveStartupPlanUseCase } from './application/startup/SaveStartupPlanUseCase'
 import { AnalyzeWithAiUseCase } from './application/startup/AnalyzeWithAiUseCase'
@@ -121,10 +123,17 @@ export function buildContainer(getWindow: () => BrowserWindow | null) {
     const detections = await detect.detections(project.id).catch(() => [])
     for (const svc of project.plan?.services ?? []) {
       const list: number[] = []
+      const det = detections.find((d) => d.repoId === svc.repoId)
       if (svc.kind === 'compose') {
-        const det = detections.find((d) => d.repoId === svc.repoId)
         const info = det?.compose?.services.find((s) => s.name === svc.command)
         if (info) list.push(...hostPorts(info.ports))
+      } else if (det?.compose && composeStopCommand(svc.command)) {
+        // "docker compose up -d [svc...]": portas publicadas dos serviços que ele sobe.
+        const named = svc.command.split(/\s+/).filter((t) => det.compose!.services.some((c) => c.name === t))
+        for (const info of det.compose.services) {
+          if (info.profiles.length || (named.length && !named.includes(info.name))) continue
+          list.push(...hostPorts(info.ports))
+        }
       }
       const envPort = Number(svc.env.PORT)
       if (Number.isInteger(envPort) && envPort > 0) list.push(envPort)
@@ -165,7 +174,7 @@ export function buildContainer(getWindow: () => BrowserWindow | null) {
       // startup
       detectPlan: detect,
       savePlan: new SaveStartupPlanUseCase(projects, localRepos, clock),
-      analyzeWithAi: new AnalyzeWithAiUseCase(projects, localRepos, settings, detect, ai, guard, clock, logger),
+      analyzeWithAi: new AnalyzeWithAiUseCase(projects, localRepos, settings, detect, ai, guard, logger),
       // runtime
       getRuntime: new GetRuntimeUseCase(getProject, runtime),
       checkConflicts: new CheckPortConflictsUseCase(getProject, runtime),
@@ -185,6 +194,7 @@ export function buildContainer(getWindow: () => BrowserWindow | null) {
       setAiEnabled: new SetAiEnabledUseCase(settings, guard, logger),
       aiStatus: new GetAiCliStatusUseCase(ai),
       pickCloneRoot: { execute: async () => shell.pickFolder('Pasta raiz dos clones', (await settings.get()).cloneRoot) },
+      pickStepFolder: new PickStepFolderUseCase(projects, localRepos, shell),
       totpStatus: new GetTotpStatusUseCase(guard),
       totpBegin: new BeginTotpSetupUseCase(guard, totp, hasher, pendingTotp),
       totpConfirm: new ConfirmTotpSetupUseCase(pendingTotp, totp, secrets, logger),

@@ -1,4 +1,4 @@
-import type { PlanDiffEntry, ServiceDefinition, StartupPlan } from '@shared/types'
+import type { ServiceDefinition, StartupPlan } from '@shared/types'
 import { AppError } from '../errors/AppError'
 
 /**
@@ -31,29 +31,18 @@ export function orderServices(services: ServiceDefinition[]): ServiceDefinition[
   return result
 }
 
-/** Serviços que entram no "play": habilitados + dependências deles (mesmo desabilitadas não entram). */
+/** Passos que entram no "play": os habilitados, na ordem do workflow (`dependsOn` só existe em planos antigos). */
 export function playableServices(plan: StartupPlan): ServiceDefinition[] {
   return orderServices(plan.services.filter((s) => s.enabled))
 }
 
-const DIFF_FIELDS: (keyof ServiceDefinition)[] = ['name', 'kind', 'command', 'cwd', 'env', 'enabled', 'order', 'dependsOn', 'composeFile']
-
-export function diffPlans(before: StartupPlan | null, after: StartupPlan): PlanDiffEntry[] {
-  const prev = new Map((before?.services ?? []).map((s) => [s.id, s]))
-  const next = new Map(after.services.map((s) => [s.id, s]))
-  const entries: PlanDiffEntry[] = []
-
-  for (const [id, svc] of next) {
-    const old = prev.get(id)
-    if (!old) {
-      entries.push({ type: 'added', serviceId: id, name: svc.name, before: null, after: svc, fields: [] })
-      continue
-    }
-    const fields = DIFF_FIELDS.filter((f) => JSON.stringify(old[f]) !== JSON.stringify(svc[f]))
-    if (fields.length) entries.push({ type: 'changed', serviceId: id, name: svc.name, before: old, after: svc, fields })
+/** Reescreve `order` em passos de 10 seguindo a ordem efetiva e limpa o `dependsOn` legado. */
+export function flattenWorkflow(services: ServiceDefinition[]): ServiceDefinition[] {
+  let ordered: ServiceDefinition[]
+  try {
+    ordered = orderServices(services)
+  } catch {
+    ordered = [...services].sort((a, b) => a.order - b.order)
   }
-  for (const [id, svc] of prev) {
-    if (!next.has(id)) entries.push({ type: 'removed', serviceId: id, name: svc.name, before: svc, after: null, fields: [] })
-  }
-  return entries
+  return ordered.map((s, i) => ({ ...s, order: i * 10, dependsOn: [] }))
 }

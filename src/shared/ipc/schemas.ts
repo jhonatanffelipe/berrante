@@ -24,6 +24,7 @@ export const serviceDefinitionSchema = z.object({
   env: z.record(z.string().regex(/^[A-Za-z_][A-Za-z0-9_]*$/), z.string().max(8000)),
   enabled: z.boolean(),
   order: z.number().int().min(0).max(10_000),
+  waitFor: z.enum(['exit', 'port', 'start']).optional(),
   dependsOn: z.array(id).max(100),
   color: accent,
   origin: z.enum(['detected', 'readme', 'ai', 'user'])
@@ -90,6 +91,7 @@ export const ipcSchemas = {
   'startup:detect': z.object({ projectId: id }),
   'startup:savePlan': z.object({ projectId: id, plan: startupPlanSchema }),
   'startup:analyzeWithAi': z.object({ projectId: id, totpCode: totpCode.optional() }),
+  'startup:pickFolder': z.object({ projectId: id, defaultPath: absolutePath.optional() }),
 
   'runtime:get': z.object({ projectId: id }),
   'runtime:checkConflicts': z.object({ projectId: id }),

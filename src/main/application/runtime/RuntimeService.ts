@@ -1,5 +1,6 @@
 import type { PortConflict, Project, ProjectRuntime, RunningProcess, ServiceDefinition, StartResult } from '@shared/types'
 import { actionServiceId, runtimeKey } from '@shared/runtime'
+import { composeStopCommand, isLongRunning, stepWaitFor } from '@shared/workflow'
 import type { ProjectRepository, RuntimeStateRepository, SettingsRepository } from '@main/domain/repositories'
 import type { DockerGateway, Logger, PortScannerGateway, ProcessExit, ProcessManagerGateway } from '@main/domain/ports'
 import { AppError } from '@main/domain/errors/AppError'
@@ -11,7 +12,7 @@ const TAG = (text: string, color = 35) => `\r\n\x1b[${color}m▌ berrante\x1b[0m
 
 const POLL_MS = 2000
 const READY_TIMEOUT_MS = 120_000
-const SCRIPT_SETTLE_MS = 2500
+const SCRIPT_SETTLE_MS = 3000
 
 /** Portas candidatas por serviço (compose publicado, env PORT, portas vistas antes). */
 export type PortHints = (project: Project) => Promise<Map<string, number[]>>
@@ -90,8 +91,8 @@ export class RuntimeService {
     const planIds = (project.plan?.services ?? []).map((s) => s.id)
     const actionIds = [...this.states.values()].filter((s) => s.projectId === project.id && s.serviceId.startsWith('action:')).map((s) => s.serviceId)
     const services = [...planIds, ...actionIds].map((id) => this.get(project.id, id))
-    // Preparos (rede, install) terminam e não contam: "boiada completa" = todo serviço longo de pé.
-    const enabled = (project.plan?.services ?? []).filter((s) => s.enabled && s.kind !== 'setup')
+    // Passos que terminam (compose up -d, install) não contam: "boiada completa" = todo processo longo de pé.
+    const enabled = (project.plan?.services ?? []).filter((s) => s.enabled && isLongRunning(s))
     const allRunning = enabled.length > 0 && enabled.every((s) => this.get(project.id, s.id).status === 'running')
     return { projectId: project.id, services, allRunning }
   }
@@ -152,26 +153,24 @@ export class RuntimeService {
     this.playing.add(project.id)
     const started: string[] = []
     const skipped: string[] = []
-    const failed = new Set<string>()
+    let halted: ServiceDefinition | null = null
     const started0 = Date.now()
     try {
+      // Workflow: um passo por vez, na ordem. Se um falha, os seguintes não rodam.
       for (const svc of playableServices(project.plan)) {
-        const blocked = svc.dependsOn.find((d) => failed.has(d))
-        if (blocked) {
+        if (halted) {
           skipped.push(svc.id)
-          failed.add(svc.id)
-          this.pm.appendLog(this.key(project.id, svc.id), TAG(`pulado: dependência "${blocked}" falhou`, 31))
+          this.pm.appendLog(this.key(project.id, svc.id), TAG(`pulado: o passo "${halted.name}" falhou`, 31))
           continue
         }
-        // Já de pé: não sobe de novo. Setups (rede, install) são idempotentes e sempre rodam.
-        if (svc.kind !== 'setup' && RunningProcessEntity.isActive(this.get(project.id, svc.id).status)) continue
+        // Já de pé: não sobe de novo. Passos que terminam (compose up -d, install) são idempotentes e sempre rodam.
+        if (stepWaitFor(svc) !== 'exit' && RunningProcessEntity.isActive(this.get(project.id, svc.id).status)) continue
         try {
           await this.startOne(project, svc)
-          const ok = await this.waitReady(project, svc)
-          if (!ok) failed.add(svc.id)
-          else started.push(svc.id)
+          if (await this.waitReady(project, svc)) started.push(svc.id)
+          else halted = svc
         } catch (err) {
-          failed.add(svc.id)
+          halted = svc
           this.set(project.id, svc.id, { status: 'crashed' })
           this.pm.appendLog(this.key(project.id, svc.id), TAG(`erro: ${(err as Error).message}`, 31))
           this.emit(project.id)
@@ -180,7 +179,7 @@ export class RuntimeService {
     } finally {
       this.playing.delete(project.id)
     }
-    this.logger.info('runtime.play', { projectId: project.id, started: started.length, failed: failed.size, durationMs: Date.now() - started0 })
+    this.logger.info('runtime.play', { projectId: project.id, started: started.length, haltedAt: halted?.id ?? null, durationMs: Date.now() - started0 })
     return { started, skipped, conflicts: [] }
   }
 
@@ -210,13 +209,9 @@ export class RuntimeService {
     this.emit(project.id)
   }
 
-  /** Espera o serviço ficar pronto: setup termina com 0; compose fica running/healthy; script sobrevive alguns segundos. */
+  /** Espera o passo liberar o próximo, conforme `waitFor` (o legado compose espera o container). */
   private async waitReady(project: Project, svc: ServiceDefinition): Promise<boolean> {
     const key = this.key(project.id, svc.id)
-    if (svc.kind === 'setup') {
-      const exit = await this.pm.waitForExit(key)
-      return exit.code === 0
-    }
     if (svc.kind === 'compose') {
       const deadline = Date.now() + READY_TIMEOUT_MS
       while (Date.now() < deadline) {
@@ -229,6 +224,29 @@ export class RuntimeService {
       this.pm.appendLog(key, TAG('timeout esperando o container ficar saudável; seguindo', 33))
       return true
     }
+
+    const waitFor = stepWaitFor(svc)
+    if (waitFor === 'exit') {
+      const exit = await this.pm.waitForExit(key)
+      return exit.code === 0
+    }
+
+    if (waitFor === 'port') {
+      const deadline = Date.now() + READY_TIMEOUT_MS
+      while (Date.now() < deadline) {
+        if (!this.pm.isAlive(key)) return false
+        const st = this.get(project.id, svc.id)
+        if (st.ports.length) {
+          this.pm.appendLog(key, TAG(`porta :${st.ports.join(' :')} aberta; seguindo`, 32))
+          return true
+        }
+        await sleep(1000)
+        await this.poll()
+      }
+      this.pm.appendLog(key, TAG('nenhuma porta aberta em 2 min; seguindo mesmo assim', 33))
+      return this.pm.isAlive(key)
+    }
+
     await sleep(SCRIPT_SETTLE_MS)
     const alive = this.pm.isAlive(key)
     if (alive && this.get(project.id, svc.id).status === 'starting') {
@@ -300,9 +318,25 @@ export class RuntimeService {
         this.logger.warn('runtime.compose.stop.failed', { projectId: project.id, error: (err as Error).message })
       }
     }
+
+    // Passos "docker compose up -d": recolhe com "docker compose stop" na mesma pasta.
+    const composeSteps = (project.plan?.services ?? []).filter((s) => s.enabled && s.kind !== 'compose' && composeStopCommand(s.command))
+    for (const s of [...composeSteps].reverse()) {
+      const key = this.key(project.id, s.id)
+      const command = composeStopCommand(s.command)!
+      try {
+        this.pm.appendLog(key, TAG(`$ ${command}  (cwd ${s.cwd})`))
+        this.set(project.id, s.id, { status: 'stopped' })
+        await this.pm.spawn({ serviceId: key, projectId: project.id, command, cwd: s.cwd, env: s.env })
+        await this.pm.waitForExit(key)
+      } catch (err) {
+        this.logger.warn('runtime.compose.stop.failed', { projectId: project.id, serviceId: s.id, error: (err as Error).message })
+      }
+    }
+
     await this.persist()
     this.emit(project.id)
-    this.logger.info('runtime.stopAll', { projectId: project.id, processes: procs.length, composeGroups: groups.size })
+    this.logger.info('runtime.stopAll', { projectId: project.id, processes: procs.length, composeGroups: groups.size, composeSteps: composeSteps.length })
   }
 
   async stopEverything(): Promise<void> {

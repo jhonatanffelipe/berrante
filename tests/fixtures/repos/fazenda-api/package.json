@@ -13,6 +13,7 @@
     "dev": "ts-node-dev --inspect --respawn --transpile-only -r tsconfig-paths/register src/shared/infra/http/server.ts",
     "build": "tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json",
     "start": "node dist/shared/infra/http/server.js",
+    "worker:start": "ts-node-dev --transpile-only -r tsconfig-paths/register src/shared/infra/queue/worker.ts",
     "migration:create": "sh -c 'typeorm-ts-node-commonjs migration:create src/shared/infra/typeorm/migrations/$1' --",
     "migration:run": "typeorm-ts-node-commonjs migration:run -d src/shared/infra/typeorm/cli/migrations.dataSource.ts",
     "migration:revert": "typeorm-ts-node-commonjs migration:revert -d src/shared/infra/typeorm/cli/migrations.dataSource.ts",

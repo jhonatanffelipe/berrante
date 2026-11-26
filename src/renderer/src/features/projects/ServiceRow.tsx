@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { RunningProcess, ServiceDefinition } from '@shared/types'
 import { runtimeKey } from '@shared/runtime'
+import { stepWaitFor } from '@shared/workflow'
 import { call, errorMessage } from '../../lib/api'
 import { accentBg } from '../../lib/accent'
 import { cn } from '../../lib/cn'
@@ -13,7 +14,7 @@ import { Tip } from '../../components/ui/Term'
 import { useToast } from '../../components/ui/Toast'
 import { LogViewer } from '../runtime/LogViewer'
 
-const KIND_LABEL: Record<ServiceDefinition['kind'], string> = { setup: 'preparo', compose: 'container', script: 'script', command: 'comando' }
+const stepLabel = (s: ServiceDefinition) => (s.kind === 'compose' ? 'container' : stepWaitFor(s) === 'exit' ? 'roda e termina' : 'fica de pé')
 
 interface Props {
   index: number
@@ -55,7 +56,7 @@ export function ServiceRow({ index, projectId, service, state, now }: Props) {
             <span className={cn('h-2.5 w-2.5 shrink-0 rounded-[1px]', accentBg[service.color])} />
             <span className="title truncate">{service.name}</span>
             <StatusBlock status={status} extra={active && state?.startedAt ? uptime(state.startedAt, now) : undefined} />
-            <Badge>{KIND_LABEL[service.kind]}</Badge>
+            <Badge>{stepLabel(service)}</Badge>
             {!service.enabled ? <Badge>fora do play</Badge> : null}
             {service.origin === 'ai' ? <Badge tone="purple">IA</Badge> : null}
           </div>

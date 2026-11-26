@@ -3,7 +3,7 @@ import type { z } from 'zod'
 import type { IpcSchemas } from './schemas'
 import type {
   AiCliStatus,
-  AiPlanSuggestion,
+  AiWorkflowSuggestion,
   AuthStatus,
   DetectionResult,
   DeviceFlowPoll,
@@ -59,7 +59,8 @@ export interface IpcOutputs {
 
   'startup:detect': DetectionResult
   'startup:savePlan': Project
-  'startup:analyzeWithAi': AiPlanSuggestion
+  'startup:analyzeWithAi': AiWorkflowSuggestion
+  'startup:pickFolder': string | null
 
   'runtime:get': ProjectRuntime
   'runtime:checkConflicts': PortConflict[]

@@ -28,7 +28,7 @@ export function unwrapCliOutput(stdout: string): unknown {
     if (envelope.structured_output && typeof envelope.structured_output === 'object') return envelope.structured_output
     if (typeof envelope.result === 'string') return extractJson(envelope.result)
     if (typeof envelope.response === 'string') return extractJson(envelope.response)
-    if (Array.isArray(envelope.services)) return envelope
+    if (Array.isArray(envelope.steps)) return envelope
   }
   throw new AppError('AI', 'Formato de resposta da CLI de IA não reconhecido')
 }

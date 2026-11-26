@@ -28,6 +28,7 @@ export const IPC_CHANNELS = [
   'startup:detect',
   'startup:savePlan',
   'startup:analyzeWithAi',
+  'startup:pickFolder',
   'runtime:get',
   'runtime:checkConflicts',
   'runtime:startAll',

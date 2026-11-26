@@ -1,4 +1,5 @@
 import type { LocalRepository, Project, ProjectRuntime } from '@shared/types'
+import { isLongRunning } from '@shared/workflow'
 import { PixelBlock } from '../../components/ui/PixelBlock'
 import { PixelButton } from '../../components/ui/PixelButton'
 import { SegmentBar } from '../../components/ui/SegmentBar'
@@ -17,7 +18,7 @@ export function RepoCard({ project, repo, runtime, now, onAction }: Props) {
   const services = (project.plan?.services ?? []).filter((s) => s.repoId === repo.id).sort((a, b) => a.order - b.order)
   const actions = (project.plan?.actions ?? []).filter((a) => a.repoId === repo.id)
   const byId = new Map((runtime?.services ?? []).map((s) => [s.serviceId, s]))
-  const playable = services.filter((s) => s.enabled && s.kind !== 'setup')
+  const playable = services.filter((s) => s.enabled && isLongRunning(s))
   const running = playable.filter((s) => byId.get(s.id)?.status === 'running').length
 
   return (
