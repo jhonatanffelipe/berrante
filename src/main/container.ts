@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto'
 import { join } from 'node:path'
 import type { Project } from '@shared/types'
 import { ShellEnv } from './infra/platform/ShellEnv'
-import { composeStopCommand } from '@shared/workflow'
+import { composeStopCommand, stepWaitFor } from '@shared/workflow'
 import { NodeCommandRunner } from './infra/platform/NodeCommandRunner'
 import { RedactingLogger } from './infra/logging/RedactingLogger'
 import {
@@ -165,8 +165,10 @@ export function buildContainer(getWindow: () => BrowserWindow | null) {
           list.push(...hostPorts(info.ports))
         }
       }
-      // PORT do env do passo (vale mais) ou do .env da pasta do passo, para processos que não são compose.
-      const fromEnvFile = svc.kind !== 'compose' && !svc.env.PORT ? envValue((await envFiles.read(svc.cwd, '.env')) ?? '', 'PORT') : null
+      // PORT do env do passo (vale mais) ou do .env da pasta do passo. O .env só conta para o passo que abre a porta
+      // (segue ao abrir porta ou ao responder): compose up, install e workers da mesma pasta leem o mesmo PORT sem usá-lo.
+      const listens = svc.kind !== 'compose' && !composeStopCommand(svc.command) && ['port', 'health'].includes(stepWaitFor(svc))
+      const fromEnvFile = listens && !svc.env.PORT ? envValue((await envFiles.read(svc.cwd, '.env')) ?? '', 'PORT') : null
       const envPort = Number(svc.env.PORT ?? fromEnvFile)
       if (Number.isInteger(envPort) && envPort > 0) list.push(envPort)
       hints.set(svc.id, list)

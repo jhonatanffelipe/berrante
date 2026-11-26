@@ -7,6 +7,11 @@ export function uptime(startedAt: string | null, now = Date.now()): string {
   return h ? `${h}h${String(m).padStart(2, '0')}m` : m ? `${m}m${String(sec).padStart(2, '0')}s` : `${sec}s`
 }
 
+/** Troca todas as pastas de usuário de um texto (ex.: comando com vários caminhos) por `~`. */
+export function shortPaths(text: string): string {
+  return text.replace(/\/Users\/[^/\s]+/g, '~').replace(/\/home\/[^/\s]+/g, '~')
+}
+
 export function shortPath(path: string): string {
   return path.replace(/^\/Users\/[^/]+/, '~').replace(/^\/home\/[^/]+/, '~')
 }

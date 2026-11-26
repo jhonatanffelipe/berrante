@@ -5,6 +5,7 @@ import { Dialog } from '../../components/ui/Dialog'
 import { PixelButton } from '../../components/ui/PixelButton'
 import { useToast } from '../../components/ui/Toast'
 import { PortChangePanel } from './PortChangePanel'
+import { shortPaths } from '../../lib/format'
 
 interface Props {
   projectId: string
@@ -49,7 +50,7 @@ export function PreflightDialog({ projectId, preflight, onPlayAnyway, onRecheck,
               <div key={key} className="rounded border border-line bg-darker">
                 <div className="flex items-start gap-3 px-3 py-2 font-mono text-xs">
                   <p className="min-w-0 flex-1 break-words">
-                    <span className="text-orange">:{c.port}</span> → {c.serviceName} <span className="text-comment">(pid {c.pid}: {c.command.slice(0, 80)})</span>
+                    <span className="text-orange">:{c.port}</span> → {c.serviceName} <span className="text-comment">(pid {c.pid}: {shortPaths(c.command).slice(0, 80)})</span>
                   </p>
                   {changing !== key ? (
                     <PixelButton size="sm" accent="cyan" onClick={() => setChanging(key)}>
