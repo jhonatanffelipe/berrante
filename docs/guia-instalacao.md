@@ -7,8 +7,8 @@ Baixe o instalador na página da versão em
 
 | Sistema | Processador | Arquivo |
 |---|---|---|
-| macOS 12 ou mais novo | Apple Silicon (M1, M2, M3, M4…) | `Berrante-0.1.0-mac-arm64.dmg` |
-| macOS 12 ou mais novo | Intel | `Berrante-0.1.0-mac-x64.dmg` |
+| macOS 12 ou mais novo | Apple Silicon (M1, M2, M3, M4…) | `Berrante-0.2.0-mac-arm64.dmg` |
+| macOS 12 ou mais novo | Intel | `Berrante-0.2.0-mac-x64.dmg` |
 
 > **Qual é o meu processador?** Menu  → **Sobre Este Mac**. Se aparecer "Chip Apple M…", é Apple Silicon
 > (`arm64`); se aparecer "Processador Intel", é `x64`.

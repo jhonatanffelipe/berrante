@@ -54,7 +54,11 @@ Variáveis só de dev (ignoradas no app empacotado):
 | `BERRANTE_CAPTURE=/arquivo.png` | salva um print da janela depois de carregar (`BERRANTE_CAPTURE_DELAY`, padrão 3500 ms) |
 | `BERRANTE_SHOTS=/pasta` | percorre as telas principais, salva um print de cada, confere o botão Copiar e fecha o app |
 
-Os prints do README são gerados assim, com tropas fictícias em `BERRANTE_USER_DATA`, para não expor projetos reais.
+Os prints do README são gerados assim, com a tropa fictícia **Fazenda** em `BERRANTE_USER_DATA`, para não expor
+projetos reais. `node scripts/demo-shots.mjs` monta tudo a partir de `tests/fixtures/repos` em `.demo/` (scripts viram
+servidores Node mínimos e o compose usa imagens leves em portas livres), sobe a tropa, salva os prints em
+`.demo/shots/` e recolhe a boiada. Depois copie os que mudaram para `docs/images/` e derrube os containers com
+`node scripts/demo-shots.mjs --down`.
 
 ## Aparência
 

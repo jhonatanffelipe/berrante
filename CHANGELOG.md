@@ -4,6 +4,30 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 [SemVer](https://semver.org/lang/pt-BR/). Enquanto estiver em `0.x`, versões menores podem mudar o formato dos
 dados; quando isso acontecer, a nota da versão avisa.
 
+## [0.2.0] — 2026-11-26
+
+O plano de subida virou um **workflow**: passos que rodam de cima para baixo, como você faria no terminal.
+
+### Mudado
+- **Plano de subida → workflow:** cada passo tem nome, pasta, comando, env e **"segue ao"** (terminar, abrir uma
+  porta ou iniciar). Não há mais "depende de" nem tipo travado: a ordem é a da lista, e se um passo falhar os
+  seguintes não rodam.
+- **Containers mais rápidos:** um passo `docker compose up -d` por repositório, que segue assim que o comando
+  termina, em vez de uma linha por container esperando o healthcheck. Recolher a boiada roda `docker compose stop`
+  na mesma pasta.
+- **Detecção na ordem de um dev:** rede → containers → `dev` da API → workers → front-end por último.
+- **IA como sugestão de workflow:** "Sugerir workflow com IA" devolve a sequência numerada com o porquê de cada
+  passo; você usa como seu workflow ou adiciona só os passos marcados ao final.
+- **Só macOS:** os instaladores de Windows e Linux saíram; as primeiras versões rodam apenas no macOS.
+
+### Adicionado
+- Seletor de pasta por passo, restrito aos repositórios da tropa.
+- Loading no confirmar do 2FA enquanto a ação roda, sem aceitar cliques repetidos.
+
+### Migração
+- Planos salvos na 0.1.0 continuam rodando. Clique em **Detectar de novo** e depois em **Salvar workflow** para
+  trocar as linhas antigas de um container por serviço pelo passo único de `docker compose up -d`.
+
 ## [0.1.0] — 2026-11-25
 
 Primeira versão pública.

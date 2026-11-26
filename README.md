@@ -16,25 +16,27 @@ de preparo e scripts de dev na ordem certa, com um clique.
 [Novidades](CHANGELOG.md) ·
 [Desenvolvimento](docs/desenvolvimento.md)
 
-<img src="docs/images/hero.png" alt="Berrante com a tropa Feira do Produtor de pé: 5 de 5 serviços rodando, portas e ações" width="100%">
+<img src="docs/images/hero.png" alt="Berrante com a tropa Fazenda de pé: 3 de 3 processos rodando, containers concluídos, portas e ações" width="100%">
 
 </div>
 
 ## ✨ Destaques
 
 - **Tropas:** um projeto com vários repositórios (backend, web, logs…) que sobem juntos.
-- **Plano de subida detectado sozinho:** o Berrante lê o lockfile, o `docker-compose.yml`, os scripts do
-  `package.json`, os blocos de shell do README e o `.env.example`, e monta a ordem: containers, preparos (`install`,
-  `docker network create`) e serviços. O plano é editável, e re-detectar preserva o que você mudou.
-- **Tocar o berrante:** sobe tudo na ordem, mostra quantos serviços estão de pé, portas, tempo rodando e log ao
+- **Workflow de subida:** passos que rodam de cima para baixo, como você faria no terminal. Cada um tem nome, pasta,
+  comando, env e quando seguir para o próximo: ao **terminar** (`docker compose up -d`), ao **abrir uma porta**
+  (`yarn dev`) ou ao **iniciar** (worker). Se um passo falhar, os seguintes não rodam.
+- **Detectado sozinho:** o Berrante lê o lockfile, o `docker-compose.yml`, os scripts do `package.json`, o README e o
+  `.env.example` e monta rede → containers → API → workers → front-end. Re-detectar preserva o que você mudou.
+- **Tocar o berrante:** sobe tudo na ordem, mostra quantos processos estão de pé, portas, tempo rodando e log ao
   vivo de cada um. **Recolher a boiada** para tudo de forma limpa (`SIGTERM` → `SIGKILL` e `docker compose stop`).
 - **Fecha sem derrubar:** ao sair, escolha entre recolher ou manter rodando; na próxima abertura o Berrante reconhece
   os processos que ficaram de pé.
 - **Contar a boiada:** todas as portas abertas da máquina, com PID, comando e de qual tropa é. Avisa antes de subir
   se alguma porta já estiver ocupada.
 - **GitHub integrado:** login pelo `gh` ou por código, lista, clone e pull, com o token guardado cifrado.
-- **IA opcional e sob controle:** Claude Code ou Antigravity sugerem ajustes no plano em modo somente leitura, como
-  um diff que você aprova item a item.
+- **IA opcional e sob controle:** Claude Code ou Antigravity leem os repositórios em modo somente leitura e sugerem
+  um workflow, com o porquê de cada passo; você escolhe o que entra.
 - **2FA (TOTP)** para as ações sensíveis, como a IA e encerrar processos de fora.
 - **Do seu jeito:** 9 cores de destaque com o fundo tingido pelo tom escolhido, o tema **Drácula** e atalhos de
   teclado para tudo.
@@ -43,11 +45,11 @@ de preparo e scripts de dev na ordem certa, com um clique.
 
 <table>
   <tr>
-    <td width="50%"><img src="docs/images/plano-de-subida.png" alt="Plano de subida editável: ordem, liga e desliga, comando, pasta, variáveis e dependências"></td>
+    <td width="50%"><img src="docs/images/plano-de-subida.png" alt="Workflow de subida: passos em ordem com nome, comando, pasta, env e segue ao terminar, abrir uma porta ou iniciar"></td>
     <td width="50%"><img src="docs/images/contar-a-boiada.png" alt="Contar a boiada: portas abertas com PID, comando, pasta e tropa dona"></td>
   </tr>
   <tr>
-    <td align="center"><sub><b>Plano de subida</b> · detectado, editável, com dependências</sub></td>
+    <td align="center"><sub><b>Plano de subida</b> · workflow em passos, pasta, comando e env</sub></td>
     <td align="center"><sub><b>Contar a boiada</b> · portas, PIDs e de qual tropa é cada uma</sub></td>
   </tr>
   <tr>
@@ -83,8 +85,8 @@ de preparo e scripts de dev na ordem certa, com um clique.
   </tr>
 </table>
 
-> As telas usam tropas de demonstração (Feira do Produtor, Rádio Sertaneja e Laticínios Serra) com repositórios
-> fictícios.
+> As telas usam a tropa de demonstração **Fazenda** (`fazenda-api`, `fazenda-web` e `fazenda-logs`), montada a partir
+> das fixtures de teste por `node scripts/demo-shots.mjs`.
 
 ## 📦 Baixar e instalar
 
@@ -92,8 +94,8 @@ Baixe na página da [última versão](https://github.com/jhonatanffelipe/berrant
 
 | Sistema | Arquivo |
 |---|---|
-| macOS · Apple Silicon (M1 ou mais novo) | `Berrante-0.1.0-mac-arm64.dmg` |
-| macOS · Intel | `Berrante-0.1.0-mac-x64.dmg` |
+| macOS · Apple Silicon (M1 ou mais novo) | `Berrante-0.2.0-mac-arm64.dmg` |
+| macOS · Intel | `Berrante-0.2.0-mac-x64.dmg` |
 
 O app não é assinado, então o macOS pede uma confirmação na primeira abertura. O passo a passo, da instalação à
 primeira tropa de pé, está no **[guia de instalação](docs/guia-instalacao.md)**.

@@ -6,6 +6,7 @@ Cada pasta guarda as notas de uma versão. Os instaladores ficam anexados ao
 
 | Versão | Data | Plataformas | Notas |
 |---|---|---|---|
+| [v0.2.0](v0.2.0/README.md) | 2026-11-26 | macOS (arm64 e x64) | Workflow de subida simplificado e IA como sugestão |
 | [v0.1.0](v0.1.0/README.md) | 2026-11-25 | macOS (arm64 e x64) | Primeira versão pública |
 
 ## Montar uma versão nova
