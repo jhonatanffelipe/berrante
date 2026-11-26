@@ -27,6 +27,7 @@ export function ProjectFormDialog({ open, onOpenChange, project }: Props) {
   const [repoIds, setRepoIds] = useState<string[]>([])
   const [workspaceFile, setWorkspaceFile] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [repoFilter, setRepoFilter] = useState('')
 
   useEffect(() => {
     if (!open) return
@@ -35,7 +36,15 @@ export function ProjectFormDialog({ open, onOpenChange, project }: Props) {
     setIcon(project?.icon ?? 'tee')
     setRepoIds(project?.repositoryIds ?? [])
     setWorkspaceFile(project?.workspaceFile ?? null)
+    setRepoFilter('')
   }, [open, project])
+
+  const q = repoFilter.trim().toLowerCase()
+  const visible = q ? repos.filter((r) => r.name.toLowerCase().includes(q) || r.path.toLowerCase().includes(q)) : repos
+  const allVisible = visible.length > 0 && visible.every((r) => repoIds.includes(r.id))
+  /** Marca (na ordem da lista) ou desmarca todos os repositórios visíveis no filtro. */
+  const toggleVisible = () =>
+    setRepoIds((ids) => (allVisible ? ids.filter((id) => !visible.some((r) => r.id === id)) : [...ids, ...visible.map((r) => r.id).filter((id) => !ids.includes(id))]))
 
   const toggle = (id: string) => setRepoIds((ids) => (ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]))
 
@@ -88,9 +97,17 @@ export function ProjectFormDialog({ open, onOpenChange, project }: Props) {
           </Field>
         </div>
         <Field label={`Repositórios (${repoIds.length})`} hint="A ordem de seleção é a ordem dos cards no painel.">
+          {repos.length > 1 ? (
+            <div className="mb-2 flex items-center gap-2">
+              <input className="pixel-input !py-1 text-xs" placeholder="filtrar repositórios…" value={repoFilter} onChange={(e) => setRepoFilter(e.target.value)} aria-label="Filtrar repositórios" />
+              <PixelButton size="sm" disabled={!visible.length} onClick={toggleVisible}>
+                {allVisible ? 'Desmarcar' : 'Marcar'} {q ? 'filtrados' : 'todos'}
+              </PixelButton>
+            </div>
+          ) : null}
           <div className="max-h-56 space-y-1 overflow-auto bg-darker p-2">
             {repos.length === 0 ? <p className="p-2 text-comment">Importe ou clone repositórios primeiro.</p> : null}
-            {repos.map((r) => {
+            {visible.map((r) => {
               const idx = repoIds.indexOf(r.id)
               return (
                 <button key={r.id} type="button" onClick={() => toggle(r.id)} className={cn('flex w-full items-center gap-3 px-2 py-1.5 text-left', idx >= 0 ? 'bg-line' : 'hover:bg-line/40')}>

@@ -217,6 +217,8 @@ export interface ShellGateway {
   openExternal(url: string): Promise<void>
   reveal(path: string): void
   pickFolder(title: string, defaultPath?: string): Promise<string | null>
+  /** Seleção múltipla (⌘-clique no diálogo do macOS). */
+  pickFolders(title: string, defaultPath?: string): Promise<string[]>
   pickFile(title: string, filter: { name: string; extensions: string[] }, defaultPath?: string): Promise<string | null>
 }
 

@@ -28,9 +28,31 @@ function GithubTab() {
   const [result, setResult] = useState<RepoListResult | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [cloning, setCloning] = useState<GithubRepo | null>(null)
+  const [cloning, setCloning] = useState<GithubRepo[] | null>(null)
   const [subdir, setSubdir] = useState('')
   const [busy, setBusy] = useState(false)
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null)
+  /** Seleção para clonar em lote; sobrevive à troca de página e de filtro. */
+  const [selected, setSelected] = useState<Map<string, GithubRepo>>(new Map())
+
+  const toggleSelected = (r: GithubRepo) =>
+    setSelected((cur) => {
+      const next = new Map(cur)
+      if (next.has(r.fullName)) next.delete(r.fullName)
+      else next.set(r.fullName, r)
+      return next
+    })
+  const pageCloneable = result?.items.filter((r) => !r.localPath) ?? []
+  const allPageSelected = pageCloneable.length > 0 && pageCloneable.every((r) => selected.has(r.fullName))
+  const togglePage = () =>
+    setSelected((cur) => {
+      const next = new Map(cur)
+      for (const r of pageCloneable) {
+        if (allPageSelected) next.delete(r.fullName)
+        else next.set(r.fullName, r)
+      }
+      return next
+    })
 
   const load = async (refresh = false) => {
     setLoading(true)
@@ -50,20 +72,34 @@ function GithubTab() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search, owner, visibility, cloned, page, auth?.authenticated])
 
+  /** Clona um por vez (o git já paraleliza a rede); um que falha não para os outros. */
   const clone = async () => {
-    if (!cloning) return
+    if (!cloning?.length) return
     setBusy(true)
-    try {
-      const r = await call('repos:clone', { fullName: cloning.fullName, subdir: subdir || undefined })
-      toast({ title: 'Clonado!', body: shortPath(r.repository.path), accent: 'green' })
-      setCloning(null)
-      await reloadRepos()
-      await load()
-    } catch (err) {
-      toast({ title: 'Falha no clone', body: errorMessage(err), accent: 'red' })
-    } finally {
-      setBusy(false)
+    const failed: string[] = []
+    let ok = 0
+    setProgress({ done: 0, total: cloning.length })
+    for (const [i, repo] of cloning.entries()) {
+      try {
+        await call('repos:clone', { fullName: repo.fullName, subdir: subdir || undefined })
+        ok++
+        setSelected((cur) => {
+          const next = new Map(cur)
+          next.delete(repo.fullName)
+          return next
+        })
+      } catch (err) {
+        failed.push(`${repo.name}: ${errorMessage(err)}`)
+      }
+      setProgress({ done: i + 1, total: cloning.length })
     }
+    if (ok) toast({ title: ok === 1 ? 'Clonado!' : `${ok} repositórios clonados`, body: shortPath(`${settings?.cloneRoot ?? ''}${subdir ? `/${subdir}` : ''}`), accent: 'green' })
+    if (failed.length) toast({ title: `${failed.length} clone(s) falharam`, body: failed.join(' · '), accent: 'red' })
+    setBusy(false)
+    setProgress(null)
+    setCloning(null)
+    await reloadRepos()
+    await load()
   }
 
   if (!auth?.authenticated) return <div className="py-8"><LoginCard /></div>
@@ -90,10 +126,30 @@ function GithubTab() {
         <PixelButton onClick={() => void load(true)} disabled={loading}>Atualizar</PixelButton>
         {loading ? <Spinner /> : null}
       </div>
+      <div className="flex flex-wrap items-center gap-3 text-xs">
+        <label className="flex items-center gap-2 text-comment">
+          <input type="checkbox" checked={allPageSelected} disabled={!pageCloneable.length} onChange={togglePage} />
+          Selecionar os não clonados desta página
+        </label>
+        {selected.size ? (
+          <>
+            <span className="font-mono font-bold text-fg">{selected.size} selecionado(s)</span>
+            <PixelButton size="sm" onClick={() => setSelected(new Map())}>Limpar</PixelButton>
+            <PixelButton size="sm" accent="cyan" onClick={() => { setCloning([...selected.values()]); setSubdir('') }}>
+              Clonar {selected.size} selecionado(s)
+            </PixelButton>
+          </>
+        ) : null}
+      </div>
       {error ? <p className="text-red">{error}</p> : null}
       <div className="grid grid-cols-1 gap-3">
         {result?.items.map((r) => (
-          <PixelBlock key={r.id} size="sm" accent={r.localPath ? 'green' : 'line'} className="flex items-center gap-4 px-4 py-3">
+          <PixelBlock key={r.id} size="sm" accent={r.localPath ? 'green' : selected.has(r.fullName) ? 'cyan' : 'line'} className="flex items-center gap-4 px-4 py-3">
+            {!r.localPath ? (
+              <input type="checkbox" checked={selected.has(r.fullName)} onChange={() => toggleSelected(r)} aria-label={`Selecionar ${r.fullName}`} />
+            ) : (
+              <span className="w-[13px]" />
+            )}
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <span className="truncate text-fg">{r.fullName}</span>
@@ -106,7 +162,7 @@ function GithubTab() {
             </div>
             <a href={r.htmlUrl} target="_blank" rel="noreferrer" className="text-xs text-cyan hover:underline">GitHub ↗</a>
             {!r.localPath ? (
-              <PixelButton accent="cyan" onClick={() => { setCloning(r); setSubdir('') }}>Clonar</PixelButton>
+              <PixelButton accent="cyan" onClick={() => { setCloning([r]); setSubdir('') }}>Clonar</PixelButton>
             ) : null}
           </PixelBlock>
         ))}
@@ -120,15 +176,22 @@ function GithubTab() {
         </div>
       ) : null}
 
-      <Dialog open={cloning !== null} onOpenChange={(o) => !o && setCloning(null)} title={`Clonar ${cloning?.name ?? ''}`} accent="cyan">
+      <Dialog open={cloning !== null} onOpenChange={(o) => !o && !busy && setCloning(null)} title={cloning?.length === 1 ? `Clonar ${cloning[0]!.name}` : `Clonar ${cloning?.length ?? 0} repositórios`} accent="cyan">
         <div className="space-y-4">
-          <Field label="Subpasta (opcional)" hint={`Destino: ${shortPath(`${settings?.cloneRoot ?? ''}/${subdir ? `${subdir}/` : ''}${cloning?.name ?? ''}`)}`}>
+          {cloning && cloning.length > 1 ? (
+            <div className="max-h-40 space-y-1 overflow-auto bg-darker p-2 font-mono text-xs">
+              {cloning.map((r) => <p key={r.fullName} className="truncate text-fg">{r.fullName}</p>)}
+            </div>
+          ) : null}
+          <Field label="Subpasta (opcional)" hint={`Destino: ${shortPath(`${settings?.cloneRoot ?? ''}/${subdir ? `${subdir}/` : ''}${cloning?.length === 1 ? cloning[0]!.name : '<repo>'}`)}`}>
             <input className="pixel-input" placeholder="ex: clientes" value={subdir} onChange={(e) => setSubdir(e.target.value.trim())} />
           </Field>
           <p className="text-xs text-comment">O token vai só por GIT_ASKPASS: o remote fica limpo, sem credencial.</p>
           <div className="flex justify-end gap-2">
-            <PixelButton onClick={() => setCloning(null)}>Cancelar</PixelButton>
-            <PixelButton accent="cyan" onClick={() => void clone()} disabled={busy}>{busy ? 'Clonando…' : 'Clonar'}</PixelButton>
+            <PixelButton onClick={() => setCloning(null)} disabled={busy}>Cancelar</PixelButton>
+            <PixelButton accent="cyan" onClick={() => void clone()} disabled={busy}>
+              {busy ? `Clonando… ${progress ? `${progress.done}/${progress.total}` : ''}` : 'Clonar'}
+            </PixelButton>
           </div>
         </div>
       </Dialog>
@@ -153,16 +216,24 @@ function LocalTab() {
     }
   }
 
-  const importFolder = () =>
-    run('import', async () => {
-      const r = await call('repos:importFolder', {})
-      if (r) await reloadRepos()
-    }, 'Pasta importada')
+  const importFolder = async () => {
+    setBusy('import')
+    try {
+      const imported = await call('repos:importFolder', {})
+      if (!imported.length) return
+      await reloadRepos()
+      toast({ title: imported.length === 1 ? 'Pasta importada' : `${imported.length} pastas importadas`, accent: 'green' })
+    } catch (err) {
+      toast({ title: 'Deu ruim', body: errorMessage(err), accent: 'red' })
+    } finally {
+      setBusy(null)
+    }
+  }
 
   return (
     <div className="space-y-4 pt-4">
       <div className="flex gap-3">
-        <PixelButton accent="accent" onClick={() => void importFolder()} disabled={busy === 'import'}>Importar pasta local</PixelButton>
+        <PixelButton accent="accent" onClick={() => void importFolder()} disabled={busy === 'import'} title="⌘-clique no diálogo para escolher várias">Importar pastas locais</PixelButton>
       </div>
       {repos.length === 0 ? (
         <EmptyState title="Nenhum repositório local">Clone do GitHub ou importe uma pasta que já existe na sua máquina.</EmptyState>

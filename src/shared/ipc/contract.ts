@@ -53,7 +53,7 @@ export interface IpcOutputs {
   'repos:listLocal': LocalRepository[]
   'repos:clone': GitOperationResult
   'repos:pull': GitOperationResult
-  'repos:importFolder': LocalRepository | null
+  'repos:importFolder': LocalRepository[]
   'repos:remove': void
   'repos:reveal': void
   'repos:openTerminal': void

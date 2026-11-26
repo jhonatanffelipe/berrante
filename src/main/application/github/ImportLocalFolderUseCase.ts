@@ -15,9 +15,15 @@ export class ImportLocalFolderUseCase {
     private readonly clock: Clock
   ) {}
 
-  async execute(path?: string): Promise<LocalRepository | null> {
-    const target = path ?? (await this.shell.pickFolder('Importar pasta local', (await this.settings.get()).cloneRoot))
-    if (!target) return null
+  /** Importa a pasta indicada ou as escolhidas no diálogo (várias de uma vez). */
+  async execute(path?: string): Promise<LocalRepository[]> {
+    const targets = path ? [path] : await this.shell.pickFolders('Importar pastas locais (⌘-clique para várias)', (await this.settings.get()).cloneRoot)
+    const imported: LocalRepository[] = []
+    for (const target of targets) imported.push(await this.importOne(target))
+    return imported
+  }
+
+  private async importOne(target: string): Promise<LocalRepository> {
     const info = await stat(target).catch(() => null)
     if (!info?.isDirectory()) throw AppError.validation('Selecione uma pasta')
 

@@ -29,6 +29,13 @@ export class ElectronShell implements ShellGateway, BrowserGateway {
     return result.canceled ? null : (result.filePaths[0] ?? null)
   }
 
+  async pickFolders(title: string, defaultPath?: string): Promise<string[]> {
+    const win = this.window()
+    const options: Electron.OpenDialogOptions = { title, defaultPath, properties: ['openDirectory', 'multiSelections', 'createDirectory'] }
+    const result = win ? await dialog.showOpenDialog(win, options) : await dialog.showOpenDialog(options)
+    return result.canceled ? [] : result.filePaths
+  }
+
   async pickFile(title: string, filter: { name: string; extensions: string[] }, defaultPath?: string): Promise<string | null> {
     const win = this.window()
     const options: Electron.OpenDialogOptions = { title, defaultPath, filters: [filter], properties: ['openFile'] }
