@@ -4,6 +4,15 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 [SemVer](https://semver.org/lang/pt-BR/). Enquanto estiver em `0.x`, versões menores podem mudar o formato dos
 dados; quando isso acontecer, a nota da versão avisa.
 
+## [0.6.2] — 2026-11-26
+
+Serviço fora do play deixa de aparecer apagado no painel.
+
+### Alterado
+- **Serviço fora do play:** a linha não fica mais esmaecida, então o ▶, o log e a porta continuam legíveis. No
+  lugar do número aparece `··` (com dica), a etiqueta **fora do play** fica laranja e a numeração conta só os
+  passos que sobem com o play, na ordem da subida.
+
 ## [0.6.1] — 2026-11-26
 
 Correção da vistoria: cada porta aparece só no passo que a usa.
