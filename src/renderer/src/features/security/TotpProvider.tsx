@@ -3,6 +3,7 @@ import { BerranteError, errorMessage } from '../../lib/api'
 import { Dialog } from '../../components/ui/Dialog'
 import { PixelButton } from '../../components/ui/PixelButton'
 import { Field } from '../../components/ui/Field'
+import { Spinner } from '../../components/ui/Spinner'
 
 type WithTotp = <T>(reason: string, fn: (code?: string) => Promise<T>) => Promise<T | null>
 
@@ -14,7 +15,7 @@ export const useTotp = () => useContext(Ctx)
  * Retorna null se o usuário cancelar.
  */
 export function TotpProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<{ reason: string; error: string | null } | null>(null)
+  const [state, setState] = useState<{ reason: string; error: string | null; pending: boolean } | null>(null)
   const [code, setCode] = useState('')
   const resolver = useRef<((code: string | null) => void) | null>(null)
 
@@ -22,7 +23,7 @@ export function TotpProvider({ children }: { children: ReactNode }) {
     new Promise<string | null>((resolve) => {
       resolver.current = resolve
       setCode('')
-      setState({ reason, error })
+      setState({ reason, error, pending: false })
     })
 
   const withTotp: WithTotp = useCallback(async (reason, fn) => {
@@ -45,12 +46,20 @@ export function TotpProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  // A ação pode demorar (a IA leva dezenas de segundos): o diálogo fica em "aguarde" até ela terminar,
+  // sem aceitar outro clique. Código errado volta com o erro; sucesso ou outro erro fecha.
   const submit = (e: FormEvent) => {
     e.preventDefault()
-    resolver.current?.(code.trim())
+    if (state?.pending || !resolver.current) return
+    const resolve = resolver.current
+    resolver.current = null
+    setState((s) => (s ? { ...s, error: null, pending: true } : s))
+    resolve(code.trim())
   }
   const cancel = () => {
+    if (state?.pending) return
     resolver.current?.(null)
+    resolver.current = null
     setState(null)
   }
 
@@ -60,13 +69,13 @@ export function TotpProvider({ children }: { children: ReactNode }) {
       <Dialog open={state !== null} onOpenChange={(o) => !o && cancel()} title="Código 2FA" description={state?.reason} accent="yellow" width="max-w-sm">
         <form onSubmit={submit} className="space-y-4">
           <Field label="Autenticador ou código de recuperação" hint="6 dígitos do app, ou um código xxxxx-xxxxx">
-            <input autoFocus className="pixel-input text-center font-mono !text-xl font-bold tracking-[0.4em]" value={code} onChange={(e) => setCode(e.target.value)} maxLength={11} autoComplete="one-time-code" />
+            <input autoFocus disabled={state?.pending} className="pixel-input text-center font-mono !text-xl font-bold tracking-[0.4em]" value={code} onChange={(e) => setCode(e.target.value)} maxLength={11} autoComplete="one-time-code" />
           </Field>
           {state?.error ? <p className="text-red">{state.error}</p> : null}
           <div className="flex justify-end gap-2">
-            <PixelButton onClick={cancel}>Cancelar</PixelButton>
-            <PixelButton type="submit" accent="yellow" disabled={code.trim().length < 6}>
-              Confirmar
+            <PixelButton onClick={cancel} disabled={state?.pending}>Cancelar</PixelButton>
+            <PixelButton type="submit" accent="yellow" disabled={state?.pending || code.trim().length < 6} aria-busy={state?.pending}>
+              {state?.pending ? <Spinner label="Aguarde…" /> : 'Confirmar'}
             </PixelButton>
           </div>
         </form>
