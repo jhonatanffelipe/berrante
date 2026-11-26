@@ -18,6 +18,9 @@ export interface Settings {
   stopTimeoutMs: number
 }
 
+export const TERMINAL_APPS = ['Terminal', 'iTerm', 'Warp', 'Ghostty'] as const
+export type TerminalApp = (typeof TERMINAL_APPS)[number]
+
 export interface TotpStatus {
   enabled: boolean
   recoveryCodesLeft: number

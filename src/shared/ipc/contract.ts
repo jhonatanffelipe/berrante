@@ -56,6 +56,7 @@ export interface IpcOutputs {
   'repos:importFolder': LocalRepository | null
   'repos:remove': void
   'repos:reveal': void
+  'repos:openTerminal': void
 
   'projects:list': Project[]
   'projects:get': Project
@@ -89,6 +90,7 @@ export interface IpcOutputs {
 
   'ports:list': PortBinding[]
   'ports:kill': void
+  'ports:open': void
 
   'containers:list': ContainerList
   'containers:action': void

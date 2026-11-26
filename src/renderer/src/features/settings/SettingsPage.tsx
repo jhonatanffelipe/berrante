@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import type { AiCliName, AiCliStatus, TotpSetup, TotpStatus } from '@shared/types'
+import type { AiCliName, AiCliStatus, TerminalApp, TotpSetup, TotpStatus } from '@shared/types'
+import { TERMINAL_APPS } from '@shared/types/settings'
 import { ACCENTS, ACCENT_NAMES, isPresetTheme } from '@shared/theme'
 import { cn } from '../../lib/cn'
 import { call, errorMessage } from '../../lib/api'

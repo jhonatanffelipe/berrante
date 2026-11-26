@@ -26,6 +26,7 @@ export function buildHandlers(uc: UseCases): Handlers {
     'repos:importFolder': (i) => uc.importFolder.execute(i.path),
     'repos:remove': (i) => uc.removeLocalRepo.execute(i.repoId),
     'repos:reveal': (i) => uc.revealRepo.execute(i.repoId),
+    'repos:openTerminal': (i) => uc.openRepoTerminal.execute(i.repoId),
 
     'projects:list': () => uc.listProjects.execute(),
     'projects:get': (i) => uc.getProject.execute(i.id),
@@ -59,6 +60,7 @@ export function buildHandlers(uc: UseCases): Handlers {
 
     'ports:list': () => uc.listPorts.execute(),
     'ports:kill': (i) => uc.killPid.execute(i.pid, i.totpCode),
+    'ports:open': (i) => uc.openPort.execute(i.port),
 
     'containers:list': () => uc.listContainers.execute(),
     'containers:action': (i) => uc.containerAction.execute(i.id, i.action),

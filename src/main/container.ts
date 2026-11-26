@@ -224,6 +224,7 @@ export function buildContainer(getWindow: () => BrowserWindow | null) {
       // portas
       listPorts: new ListPortsUseCase(ports, runtime, projects),
       killPid: new KillPidUseCase(runtime, ports, killer, guard, projects, settings, logger),
+      openPort: new OpenLocalPortUseCase(shell),
       // containers (curral)
       listContainers: new ListContainersUseCase(docker, projects, localRepos),
       containerAction: new ContainerActionUseCase(docker, logger),

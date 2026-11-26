@@ -22,10 +22,11 @@ interface Props {
   service: ServiceDefinition
   state: RunningProcess | undefined
   now: number
+  onOpenPort: (port: number) => void
 }
 
 /** Linha de serviço no estilo painel: índice, título + status, comando, medidor e valor à direita. */
-export function ServiceRow({ index, projectId, service, state, now }: Props) {
+export function ServiceRow({ index, projectId, service, state, now, onOpenPort }: Props) {
   const toast = useToast()
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -64,9 +65,15 @@ export function ServiceRow({ index, projectId, service, state, now }: Props) {
           <p className="mt-1 truncate font-mono text-xs text-comment">{service.kind === 'compose' ? `docker compose · ${service.command}${state?.container ? ` · ${state.container.name}` : ''}` : service.command}</p>
         </button>
         <SegmentBar value={meter} segments={20} tone={status === 'crashed' ? 'red' : status === 'exited' ? 'cyan' : 'accent'} className={cn('hidden lg:flex', status === 'starting' && 'animate-blink')} height={14} />
-        <span className={cn('w-28 truncate text-right font-mono text-[15px] font-bold', state?.ports.length ? 'text-fg' : 'text-comment')} title={value}>
-          {value}
-        </span>
+        {state?.ports.length ? (
+          <button type="button" className="w-28 truncate text-right font-mono text-[15px] font-bold text-fg hover:text-accent" title={`Abrir http://localhost:${state.ports[0]} no navegador`} onClick={() => onOpenPort(state.ports[0]!)}>
+            {value} ↗
+          </button>
+        ) : (
+          <span className="w-28 truncate text-right font-mono text-[15px] font-bold text-comment" title={value}>
+            {value}
+          </span>
+        )}
         <div className="flex gap-1.5">
           {active ? (
             <>

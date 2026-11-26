@@ -17,6 +17,7 @@ interface Props {
   now: number
   git: RepoGitStatus | undefined
   onAction: (repoId: string, name: string) => void
+  onOpenPort: (port: number) => void
 }
 
 /** Marcação do git no cabeçalho: branch, alterações não salvas e commits à frente/atrás. */
@@ -69,6 +70,11 @@ export function RepoCard({ project, repo, runtime, now, git, onAction, onOpenPor
         {git ? <GitMark git={git} /> : null}
         <span className="min-w-0 truncate font-mono text-[11px] text-comment">{shortPath(repo.path)}</span>
         <div className="ml-auto flex shrink-0 items-center gap-3">
+          <Tip label="Abrir terminal nesta pasta">
+            <PixelButton size="icon" aria-label={`Abrir terminal em ${repo.name}`} onClick={() => void call('repos:openTerminal', { repoId: repo.id }).catch((err) => toast({ title: 'Terminal não abriu', body: errorMessage(err), accent: 'red' }))}>
+              {'>_'}
+            </PixelButton>
+          </Tip>
           <SegmentBar value={playable.length ? running / playable.length : 0} segments={Math.max(playable.length * 3, 6)} height={10} />
           <span className="font-mono text-xs font-bold text-fg">
             {running}/{playable.length} <span className="font-normal text-comment">de pé</span>
@@ -78,7 +84,7 @@ export function RepoCard({ project, repo, runtime, now, git, onAction, onOpenPor
       <div className="divide-y divide-line/50">
         {services.length === 0 ? <p className="px-5 py-4 text-comment">Nenhum serviço no plano para este repositório.</p> : null}
         {services.map((s, i) => (
-          <ServiceRow key={s.id} index={i + 1} projectId={project.id} service={s} state={byId.get(s.id)} now={now} />
+          <ServiceRow key={s.id} index={i + 1} projectId={project.id} service={s} state={byId.get(s.id)} now={now} onOpenPort={onOpenPort} />
         ))}
       </div>
       {actions.length ? (

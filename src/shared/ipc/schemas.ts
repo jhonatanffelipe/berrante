@@ -95,6 +95,7 @@ export const ipcSchemas = {
   'repos:importFolder': z.object({ path: absolutePath.optional() }),
   'repos:remove': z.object({ repoId: id }),
   'repos:reveal': z.object({ repoId: id }),
+  'repos:openTerminal': z.object({ repoId: id }),
 
   'projects:list': none,
   'projects:get': z.object({ id }),
@@ -128,6 +129,7 @@ export const ipcSchemas = {
 
   'ports:list': none,
   'ports:kill': z.object({ pid: z.number().int().min(2), totpCode: totpCode.optional() }),
+  'ports:open': z.object({ port: z.number().int().min(1).max(65_535) }),
 
   'containers:list': none,
   'containers:action': z.object({ id: z.string().regex(/^[a-f0-9]{12,64}$/, 'ID de container inválido'), action: z.enum(['start', 'stop', 'restart']) }),

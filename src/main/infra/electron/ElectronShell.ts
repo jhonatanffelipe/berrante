@@ -1,16 +1,21 @@
 import { dialog, shell, type BrowserWindow } from 'electron'
-import type { ShellGateway } from '@main/domain/ports'
+import type { BrowserGateway, ShellGateway } from '@main/domain/ports'
 import { AppError } from '@main/domain/errors/AppError'
 
 const ALLOWED_HOSTS = new Set(['github.com', 'www.github.com'])
 
-export class ElectronShell implements ShellGateway {
+export class ElectronShell implements ShellGateway, BrowserGateway {
   constructor(private readonly window: () => BrowserWindow | null) {}
 
   async openExternal(url: string): Promise<void> {
     const parsed = new URL(url)
     if (parsed.protocol !== 'https:' || !ALLOWED_HOSTS.has(parsed.hostname)) throw AppError.validation('URL externa não permitida')
     await shell.openExternal(parsed.toString())
+  }
+
+  async openLocalPort(port: number): Promise<void> {
+    if (!Number.isInteger(port) || port < 1 || port > 65_535) throw AppError.validation('Porta inválida')
+    await shell.openExternal(`http://localhost:${port}/`)
   }
 
   reveal(path: string): void {

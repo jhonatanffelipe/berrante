@@ -258,7 +258,15 @@ export function ProjectPanel({ project }: { project: Project }) {
           <div>
             <span className="label-muted">portas</span>
             <div className="mt-2 flex max-h-24 flex-wrap gap-1.5 overflow-auto">
-              {ports.length ? ports.map((p) => <Badge key={p} tone="green">:{p}</Badge>) : <span className="font-mono text-xs text-comment">nenhuma aberta</span>}
+              {ports.length ? (
+                ports.map((p) => (
+                  <button key={p} type="button" onClick={() => openPort(p)} title={`Abrir http://localhost:${p} no navegador`} className="hover:brightness-125">
+                    <Badge tone="green">:{p} ↗</Badge>
+                  </button>
+                ))
+              ) : (
+                <span className="font-mono text-xs text-comment">nenhuma aberta</span>
+              )}
             </div>
           </div>
           <div className="space-y-2">
