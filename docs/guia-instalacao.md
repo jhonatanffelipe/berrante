@@ -7,11 +7,12 @@ Baixe o instalador na página da versão em
 
 | Sistema | Processador | Arquivo |
 |---|---|---|
-| macOS 12 ou mais novo | Apple Silicon (M1, M2, M3, M4…) | `Berrante-0.2.0-mac-arm64.dmg` |
-| macOS 12 ou mais novo | Intel | `Berrante-0.2.0-mac-x64.dmg` |
+| macOS 12 ou mais novo | Apple Silicon (M1, M2, M3, M4…) | `Berrante-0.2.1-mac-arm64.dmg` |
+| macOS 12 ou mais novo | Intel | `Berrante-0.2.1-mac-x64.dmg` |
 
 > **Qual é o meu processador?** Menu  → **Sobre Este Mac**. Se aparecer "Chip Apple M…", é Apple Silicon
-> (`arm64`); se aparecer "Processador Intel", é `x64`.
+> (`arm64`); se aparecer "Processador Intel", é `x64`. A versão Intel num Mac Apple Silicon roda pelo Rosetta e
+> fica bem mais lenta (o Berrante avisa se isso acontecer).
 
 > **Só macOS, por enquanto.** As primeiras versões do Berrante rodam apenas no macOS. Windows e Linux não são
 > suportados.
@@ -35,15 +36,22 @@ funcionam no Berrante (inclusive versões instaladas com nvm, fnm, asdf ou Homeb
 
 ## 2. Instalar
 
-1. Abra o `.dmg` e arraste o **Berrante** para **Aplicativos**.
-2. O app não é assinado pela Apple, então na primeira vez o macOS bloqueia a abertura. Vá em
+1. Abra o `.dmg` e **arraste o Berrante para Aplicativos**. Não abra o app de dentro do `.dmg`: lido da imagem
+   compactada ele fica lento (se você fizer isso, o Berrante oferece se mover para Aplicativos).
+2. Ejete o volume do `.dmg` e abra o Berrante pela pasta **Aplicativos** ou pelo Launchpad.
+3. O app não é notarizado pela Apple, então na primeira vez o macOS bloqueia a abertura. Vá em
    **Ajustes do Sistema → Privacidade e Segurança**, role até o aviso do Berrante e clique em
    **Abrir Mesmo Assim**.
-3. Se aparecer "o Berrante está danificado e não pode ser aberto", rode no Terminal e abra de novo:
+4. Se pedir acesso ao **Chaveiro** ("Berrante Safe Storage"), clique em **Sempre permitir**: é onde ficam, cifrados,
+   o token do GitHub e o 2FA. Como o app não é assinado por uma conta de desenvolvedor, o macOS pergunta de novo a
+   cada versão nova.
 
-   ```bash
-   xattr -cr /Applications/Berrante.app
-   ```
+> **Plano B:** se mesmo assim aparecer "o Berrante está danificado e não pode ser aberto" (versões até a 0.2.0
+> tinham a assinatura quebrada), rode no Terminal e abra de novo:
+>
+> ```bash
+> xattr -cr /Applications/Berrante.app
+> ```
 
 ## 3. Entrar no GitHub (opcional)
 
@@ -130,7 +138,8 @@ Em `~/Library/Application Support/Berrante/` ficam `projects.json`, `repositorie
 | Sintoma | O que fazer |
 |---|---|
 | "Não pode ser aberto porque é de um desenvolvedor não identificado" | Passo 2 (Abrir Mesmo Assim). |
-| "Está danificado" | `xattr -cr /Applications/Berrante.app`. |
+| "Está danificado" | `xattr -cr /Applications/Berrante.app` (plano B do passo 2). |
+| App lento, clique e digitação demorando | Confira se abriu o de **Aplicativos** (não o de dentro do `.dmg`) e o instalador certo para o seu processador (`arm64` para Apple Silicon). |
 | Serviço falha com `command not found` (`yarn`, `node`, `docker`) | Confirme que o comando funciona num terminal novo. O Berrante usa o `PATH` do shell de login. |
 | Containers não sobem | Abra o Docker Desktop e espere ficar "running". |
 | "Porta ocupada no pasto" ao tocar o berrante | Veja quem usa a porta em **Contar a boiada** e encerre, ou suba mesmo assim. |

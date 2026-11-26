@@ -1,7 +1,7 @@
 {
   "name": "berrante",
   "productName": "Berrante",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Um toque e a boiada vem junto: gerenciador local de projetos e serviços.",
   "author": "Jhonatan Felipe",
   "license": "UNLICENSED",
@@ -15,7 +15,7 @@
     "dev": "electron-vite dev",
     "build": "yarn typecheck && electron-vite build",
     "preview": "electron-vite preview",
-    "dist": "yarn build && electron-builder --mac",
+    "dist": "yarn build && electron-builder --mac && node scripts/clean-unpacked.mjs",
     "dist:dir": "yarn build && electron-builder --mac --arm64 --dir",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
     "test": "vitest run",

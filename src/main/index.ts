@@ -8,6 +8,7 @@ import { registerIpc } from './ipc/registerIpc'
 import { buildHandlers } from './ipc/controllers'
 import { buildAppMenu, installAboutPanel } from './ui/appMenu'
 import { runDevShots } from './ui/devShots'
+import { checkInstall } from './ui/installCheck'
 import type { MenuCommand } from '@shared/menu'
 
 const DEV_URL = process.env.ELECTRON_RENDERER_URL
@@ -164,6 +165,7 @@ app.whenReady().then(async () => {
     app.exit(1)
     return
   }
+  if (await checkInstall()) return
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
     callback({ responseHeaders: { ...details.responseHeaders, 'Content-Security-Policy': [CSP] } })
   })
@@ -191,7 +193,7 @@ app.whenReady().then(async () => {
   await refreshMenu(c)
   wireEvents(container)
   await container.runtime.init().catch((err) => container?.logger.error('runtime.init.failed', { error: (err as Error).message }))
-  container.logger.info('app.ready', { version: app.getVersion(), platform: process.platform })
+  container.logger.info('app.ready', { version: app.getVersion(), platform: process.platform, arch: process.arch, rosetta: app.runningUnderARM64Translation, path: app.getPath('exe') })
 
   mainWindow = createWindow(await container.useCases.getSettings.execute())
   mainWindow.on('closed', () => (mainWindow = null))

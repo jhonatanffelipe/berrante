@@ -4,6 +4,22 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 [SemVer](https://semver.org/lang/pt-BR/). Enquanto estiver em `0.x`, versões menores podem mudar o formato dos
 dados; quando isso acontecer, a nota da versão avisa.
 
+## [0.2.1] — 2026-11-26
+
+Correções de instalação no macOS.
+
+### Corrigido
+- **"Berrante está danificado":** os instaladores saíam com a assinatura `linker-signed` do Electron, que quebra ao
+  renomear o app; baixado pelo navegador, o macOS recusava abrir. Agora o app é assinado ad-hoc e selado por inteiro
+  (continua sem notarização: na primeira vez, use **Abrir Mesmo Assim**).
+- `yarn dist` apaga as cópias `.app` descompactadas em `release/`, que o Spotlight podia abrir no lugar do app
+  instalado.
+
+### Adicionado
+- Aviso quando a versão Intel roda pelo Rosetta num Mac Apple Silicon, com link para o instalador `arm64`.
+- Oferta de **Mover para Aplicativos** quando o Berrante é aberto de fora (de dentro do `.dmg` ou de Downloads).
+- O log de abertura registra a arquitetura, o Rosetta e o caminho do app.
+
 ## [0.2.0] — 2026-11-26
 
 O plano de subida virou um **workflow**: passos que rodam de cima para baixo, como você faria no terminal.
