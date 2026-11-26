@@ -161,9 +161,8 @@ Em `~/Library/Application Support/Berrante/`: `projects.json`, `repositories.jso
 
 ## Testes
 
-`yarn test` roda sobre fixtures em `tests/fixtures/repos` (README, `package.json` e compose de projetos de
-exemplo; `.env.example` só com chaves). `tests/unit/realRepos.test.ts` valida também contra repositórios reais da
-máquina, em modo somente leitura, e é pulado quando eles não existem.
+`yarn test` roda sobre fixtures em `tests/fixtures/repos`: README, `package.json` e compose de um projeto fictício
+(`fazenda-api`, `fazenda-web` e `fazenda-logs`), com `.env.example` só com chaves.
 
 ## Roadmap multiplataforma
 
