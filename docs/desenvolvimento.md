@@ -97,8 +97,9 @@ página de OAuth Apps do GitHub. O menu fica em `src/main/ui/appMenu.ts` e manda
 `menu:command`, assinados com o hook `useMenuCommand`. Se a janela estiver fechada, o app reabre a janela e executa o
 comando.
 
-Em `yarn dev` o primeiro item da barra aparece como "Electron", porque o macOS lê o nome do bundle do Electron. No app
-empacotado aparece "Berrante".
+O macOS mostra na barra de menus e no Dock o nome do bundle. No app empacotado o electron-builder grava "Berrante"
+no `Info.plist`. Em `yarn dev`, o `scripts/dev-app-name.mjs` (rodado no `postinstall` e no `predev`) renomeia o
+`Electron.app` de `node_modules` para "Berrante".
 
 ## Arquitetura
 
