@@ -32,6 +32,8 @@ de preparo e scripts de dev na ordem certa, com um clique.
   vivo de cada um. **Recolher a boiada** para tudo de forma limpa (`SIGTERM` → `SIGKILL` e `docker compose stop`).
 - **Fecha sem derrubar:** ao sair, escolha entre recolher ou manter rodando; na próxima abertura o Berrante reconhece
   os processos que ficaram de pé.
+- **Curral:** todos os containers Docker da máquina, com a tropa dona de cada um; pare, suba ou reinicie de dentro
+  do Berrante. Na tropa, a aba **Containers** mostra o que os passos `docker compose … up` sobem, serviço a serviço.
 - **Contar a boiada:** todas as portas abertas da máquina, com PID, comando e de qual tropa é. Avisa antes de subir
   se alguma porta já estiver ocupada.
 - **GitHub integrado:** login pelo `gh` ou por código, lista, clone e pull, com o token guardado cifrado.
@@ -111,9 +113,10 @@ primeira tropa de pé, está no **[guia de instalação](docs/guia-instalacao.md
 | `⌘↩` | Tocar o berrante |
 | `⇧⌘↩` | Recolher a boiada |
 | `⌘1` … `⌘9` | Ir para a tropa N |
-| `⌥⌘1` / `⌥⌘2` | Abas Boiada / Plano de subida |
+| `⌥⌘1` / `⌥⌘2` / `⌥⌘3` | Abas Boiada / Plano de subida / Containers |
 | `⇧⌘R` | Repositórios |
 | `⇧⌘P` | Contar a boiada |
+| `⇧⌘D` | Curral (containers) |
 | `⌘,` | Configurações |
 
 ## 🤠 Vocabulário
@@ -124,6 +127,7 @@ primeira tropa de pé, está no **[guia de instalação](docs/guia-instalacao.md
 | Tocar o berrante | Subir tudo (start all) |
 | Recolher a boiada | Parar tudo (stop all) |
 | Contar a boiada | Ver portas e processos abertos |
+| Curral | Containers Docker da máquina |
 | De pé | Rodando |
 
 ## 🛠️ Desenvolvimento

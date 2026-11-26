@@ -107,6 +107,16 @@ export const ipcSchemas = {
   'ports:list': none,
   'ports:kill': z.object({ pid: z.number().int().min(2), totpCode: totpCode.optional() }),
 
+  'containers:list': none,
+  'containers:action': z.object({ id: z.string().regex(/^[a-f0-9]{12,64}$/, 'ID de container inválido'), action: z.enum(['start', 'stop', 'restart']) }),
+  'containers:project': z.object({ projectId: id }),
+  'containers:projectAction': z.object({
+    projectId: id,
+    stackId: id,
+    action: z.enum(['up', 'stop', 'restart']),
+    service: z.string().regex(/^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,127}$/, 'Serviço inválido').optional()
+  }),
+
   'settings:get': none,
   'settings:update': z.object({
     cloneRoot: absolutePath.optional(),

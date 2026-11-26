@@ -80,6 +80,11 @@ export function Sidebar() {
             Contar a boiada
           </Term>
         </NavCard>
+        <NavCard index="D" active={is('containers')} onClick={() => go({ name: 'containers' })}>
+          <Term tech="Containers Docker da máquina: parar, subir e reiniciar" side="right">
+            Curral
+          </Term>
+        </NavCard>
         <NavCard index="C" active={is('settings')} onClick={() => go({ name: 'settings' })}>
           Configurações
         </NavCard>

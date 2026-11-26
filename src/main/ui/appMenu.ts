@@ -57,6 +57,7 @@ export function buildAppMenu(deps: AppMenuDeps, projects: Project[]): Menu {
         { type: 'separator' },
         { label: 'Ver a boiada', accelerator: 'Cmd+Alt+1', click: () => send({ type: 'tab', tab: 'boiada' }) },
         { label: 'Ver o plano de subida', accelerator: 'Cmd+Alt+2', click: () => send({ type: 'tab', tab: 'plano' }) },
+        { label: 'Ver os containers da tropa', accelerator: 'Cmd+Alt+3', click: () => send({ type: 'tab', tab: 'containers' }) },
         { type: 'separator' },
         { label: 'Tropas', enabled: false },
         ...tropas
@@ -79,6 +80,7 @@ export function buildAppMenu(deps: AppMenuDeps, projects: Project[]): Menu {
       submenu: [
         { label: 'Repositórios', accelerator: 'Cmd+Shift+R', click: () => send({ type: 'go', view: 'repos' }) },
         { label: 'Contar a boiada', accelerator: 'Cmd+Shift+P', click: () => send({ type: 'go', view: 'ports' }) },
+        { label: 'Curral (containers)', accelerator: 'Cmd+Shift+D', click: () => send({ type: 'go', view: 'containers' }) },
         { type: 'separator' },
         { label: 'Tamanho real', role: 'resetZoom' },
         { label: 'Aumentar', role: 'zoomIn' },

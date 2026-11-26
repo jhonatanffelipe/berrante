@@ -52,6 +52,11 @@ export function buildHandlers(uc: UseCases): Handlers {
     'ports:list': () => uc.listPorts.execute(),
     'ports:kill': (i) => uc.killPid.execute(i.pid, i.totpCode),
 
+    'containers:list': () => uc.listContainers.execute(),
+    'containers:action': (i) => uc.containerAction.execute(i.id, i.action),
+    'containers:project': (i) => uc.projectContainers.execute(i.projectId),
+    'containers:projectAction': (i) => uc.projectContainerAction.execute(i.projectId, i.stackId, i.action, i.service),
+
     'settings:get': () => uc.getSettings.execute(),
     'settings:update': (i) => uc.updateSettings.execute(i),
     'settings:setAiEnabled': (i) => uc.setAiEnabled.execute(i.enabled, i.totpCode),

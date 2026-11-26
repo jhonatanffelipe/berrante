@@ -5,6 +5,7 @@ import type {
   AiCliStatus,
   AiWorkflowSuggestion,
   AuthStatus,
+  ContainerList,
   DetectionResult,
   DeviceFlowPoll,
   DeviceFlowStart,
@@ -13,6 +14,7 @@ import type {
   PortBinding,
   PortConflict,
   Project,
+  ProjectContainers,
   ProjectRuntime,
   RepoListResult,
   Settings,
@@ -75,6 +77,11 @@ export interface IpcOutputs {
 
   'ports:list': PortBinding[]
   'ports:kill': void
+
+  'containers:list': ContainerList
+  'containers:action': void
+  'containers:project': ProjectContainers
+  'containers:projectAction': void
 
   'settings:get': Settings
   'settings:update': Settings

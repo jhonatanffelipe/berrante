@@ -7,6 +7,7 @@ import { TotpProvider } from './features/security/TotpProvider'
 import { ProjectPanel } from './features/projects/ProjectPanel'
 import { ReposPage } from './features/repos/ReposPage'
 import { PortsPage } from './features/ports/PortsPage'
+import { ContainersPage } from './features/containers/ContainersPage'
 import { SettingsPage } from './features/settings/SettingsPage'
 import { EmptyState } from './components/ui/EmptyState'
 
@@ -18,6 +19,7 @@ function Main() {
     content = project ? <ProjectPanel project={project} /> : <EmptyState title="Tropa não encontrada" />
   } else if (view.name === 'repos') content = <ReposPage />
   else if (view.name === 'ports') content = <PortsPage />
+  else if (view.name === 'containers') content = <ContainersPage />
   else content = <SettingsPage />
 
   return (

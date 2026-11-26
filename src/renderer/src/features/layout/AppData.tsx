@@ -4,7 +4,7 @@ import { call } from '../../lib/api'
 import { applyTheme } from '../../lib/applyTheme'
 import { useMenuCommand } from '../../lib/useMenuCommand'
 
-export type View = { name: 'project'; id: string } | { name: 'repos' } | { name: 'ports' } | { name: 'settings' }
+export type View = { name: 'project'; id: string } | { name: 'repos' } | { name: 'ports' } | { name: 'containers' } | { name: 'settings' }
 
 interface AppDataCtx {
   view: View

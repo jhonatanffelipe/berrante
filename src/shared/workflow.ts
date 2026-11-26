@@ -42,3 +42,33 @@ export function composeStopCommand(command: string): string | null {
     .filter((t) => t && !t.startsWith('-'))
   return [m[1], 'stop', ...services].join(' ')
 }
+
+/** Flags do `up` que levam valor separado (o valor não é nome de serviço). */
+const UP_FLAGS_WITH_VALUE = new Set(['-t', '--timeout', '--wait-timeout', '--scale', '--pull', '--exit-code-from', '--attach', '--no-attach'])
+
+export interface ComposeUpStep {
+  /** Argumentos globais do compose, antes do `up` (ex.: `-f docker-compose.dev.yml -p fazenda`). */
+  globalArgs: string[]
+  /** Serviços citados depois do `up`; vazio = todos os do compose. */
+  services: string[]
+}
+
+/**
+ * Lê um passo `docker compose ... up ...` para controlar os mesmos containers fora do workflow
+ * (sem shell: os tokens viram argv). Outros comandos, ou com metacaracteres de shell: null.
+ */
+export function parseComposeUp(command: string): ComposeUpStep | null {
+  if (/[;&|`$<>'"\\]/.test(command)) return null
+  const m = command.match(COMPOSE_UP)
+  if (!m) return null
+  const head = m[1]!.trim().split(/\s+/)
+  const globalArgs = head[0] === 'docker-compose' ? head.slice(1) : head.slice(2)
+  const services: string[] = []
+  const tokens = command.slice(m[0].length).trim().split(/\s+/).filter(Boolean)
+  for (let i = 0; i < tokens.length; i++) {
+    const t = tokens[i]!
+    if (UP_FLAGS_WITH_VALUE.has(t)) i++
+    else if (!t.startsWith('-')) services.push(t)
+  }
+  return { globalArgs, services }
+}

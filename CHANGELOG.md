@@ -4,6 +4,14 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 [SemVer](https://semver.org/lang/pt-BR/). Enquanto estiver em `0.x`, versões menores podem mudar o formato dos
 dados; quando isso acontecer, a nota da versão avisa.
 
+## [Não lançado]
+
+### Adicionado
+- **Curral** (`⇧⌘D`): todos os containers Docker da máquina, ao vivo, com estado, health, portas, projeto compose e
+  tropa dona; **parar**, **subir** e **reiniciar** cada um.
+- Aba **Containers** na tropa (`⌥⌘3`): os containers que os passos `docker compose … up` do workflow sobem, com o
+  estado de cada serviço e **subir / parar / reiniciar** um a um ou a stack inteira, sem tocar o berrante.
+
 ## [0.2.1] — 2026-11-26
 
 Correções de instalação no macOS.

@@ -76,6 +76,10 @@ import { RunActionUseCase } from './application/runtime/RunActionUseCase'
 import { GetLogsUseCase } from './application/runtime/GetLogsUseCase'
 import { ListPortsUseCase } from './application/ports/ListPortsUseCase'
 import { KillPidUseCase } from './application/ports/KillPidUseCase'
+import { ListContainersUseCase } from './application/containers/ListContainersUseCase'
+import { ContainerActionUseCase } from './application/containers/ContainerActionUseCase'
+import { GetProjectContainersUseCase } from './application/containers/GetProjectContainersUseCase'
+import { ProjectContainerActionUseCase } from './application/containers/ProjectContainerActionUseCase'
 
 declare const __GITHUB_CLIENT_ID__: string
 
@@ -188,6 +192,11 @@ export function buildContainer(getWindow: () => BrowserWindow | null) {
       // portas
       listPorts: new ListPortsUseCase(ports, runtime, projects),
       killPid: new KillPidUseCase(runtime, ports, killer, guard, projects, settings, logger),
+      // containers (curral)
+      listContainers: new ListContainersUseCase(docker, projects, localRepos),
+      containerAction: new ContainerActionUseCase(docker, logger),
+      projectContainers: new GetProjectContainersUseCase(getProject, docker),
+      projectContainerAction: new ProjectContainerActionUseCase(getProject, docker, runtime, logger),
       // configurações e segurança
       getSettings: new GetSettingsUseCase(settings),
       updateSettings: new UpdateSettingsUseCase(settings),

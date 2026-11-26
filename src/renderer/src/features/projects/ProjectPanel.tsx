@@ -24,6 +24,7 @@ import { useMenuCommand } from '../../lib/useMenuCommand'
 import { RepoCard } from './RepoCard'
 import { LineClear } from './LineClear'
 import { PlanEditor } from '../startup/PlanEditor'
+import { ProjectContainers } from '../containers/ProjectContainers'
 
 export function ProjectPanel({ project }: { project: Project }) {
   const { repos, reloadProjects, go, projects } = useAppData()
@@ -174,7 +175,7 @@ export function ProjectPanel({ project }: { project: Project }) {
       </PixelBlock>
 
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList items={[{ value: 'boiada', label: 'Boiada' }, { value: 'plano', label: 'Plano de subida' }]} />
+        <TabsList items={[{ value: 'boiada', label: 'Boiada' }, { value: 'plano', label: 'Plano de subida' }, { value: 'containers', label: 'Containers' }]} />
         <TabsContent value="boiada" className="space-y-4 pt-5">
           {projectRepos.length === 0 ? (
             <EmptyState title="Tropa vazia">Edite a tropa e adicione repositórios.</EmptyState>
@@ -200,6 +201,9 @@ export function ProjectPanel({ project }: { project: Project }) {
               <LogViewer logKey={actionLog.key} height={240} />
             </PixelBlock>
           ) : null}
+        </TabsContent>
+        <TabsContent value="containers" className="pt-5">
+          <ProjectContainers project={project} onOpenPlan={() => setTab('plano')} />
         </TabsContent>
         <TabsContent value="plano" className="pt-5">
           <PlanEditor project={project} onSaved={() => setTab('boiada')} />

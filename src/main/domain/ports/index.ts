@@ -1,7 +1,9 @@
 import type {
   AiCliName,
   ComposeInfo,
+  ContainerAction,
   ContainerState,
+  DockerContainer,
   GithubRepo,
   GithubUser,
   PortBinding,
@@ -132,6 +134,15 @@ export interface DockerGateway {
   /** Segue logs de um serviço; retorna função para parar. */
   followLogs(cwd: string, composeFile: string, service: string, onData: (data: string) => void): () => void
   networkExists(name: string): Promise<boolean>
+
+  // Curral: containers da máquina e stacks dos passos `docker compose ... up`.
+  /** `docker ps -a`; `ok: false` quando o daemon não responde. */
+  listContainers(): Promise<{ ok: true; containers: Omit<DockerContainer, 'owners'>[] } | { ok: false; error: string }>
+  containerAction(id: string, action: ContainerAction): Promise<void>
+  /** Serviços do compose (`config --services`), com os argumentos globais do passo. */
+  stackServices(cwd: string, globalArgs: string[]): Promise<string[]>
+  stackPs(cwd: string, globalArgs: string[]): Promise<Map<string, ContainerState>>
+  stackAction(cwd: string, globalArgs: string[], action: 'up' | 'stop' | 'restart', services: string[]): Promise<void>
 }
 
 // ---------- GitHub / Git ----------
