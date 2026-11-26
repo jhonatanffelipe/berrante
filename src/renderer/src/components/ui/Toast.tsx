@@ -1,14 +1,13 @@
 import * as RToast from '@radix-ui/react-toast'
 import { createContext, useCallback, useContext, useState, type ReactNode } from 'react'
-import type { DraculaAccent } from '@shared/types'
 import { PixelBlock } from './PixelBlock'
-import { accentText } from '../../lib/accent'
+import { accentText, type Tone } from '../../lib/accent'
 
 interface ToastItem {
   id: number
   title: string
   body?: string
-  accent: DraculaAccent
+  accent: Tone
 }
 
 const Ctx = createContext<(t: Omit<ToastItem, 'id'>) => void>(() => undefined)
@@ -23,8 +22,8 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         {children}
         {items.map((t) => (
           <RToast.Root key={t.id} onOpenChange={(open) => !open && setItems((all) => all.filter((x) => x.id !== t.id))} className="animate-block-drop">
-            <PixelBlock accent={t.accent} size="sm" className="w-80 bg-darker px-4 py-3">
-              <RToast.Title className={`font-pixel text-pixel ${accentText[t.accent]}`}>{t.title}</RToast.Title>
+            <PixelBlock accent={t.accent} size="sm" glow className="w-80 bg-deep px-4 py-3">
+              <RToast.Title className={`label ${accentText[t.accent]}`}>{t.title}</RToast.Title>
               {t.body ? <RToast.Description className="selectable mt-1 whitespace-pre-wrap break-words text-xs text-fg/80">{t.body}</RToast.Description> : null}
             </PixelBlock>
           </RToast.Root>

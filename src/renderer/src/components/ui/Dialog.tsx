@@ -1,6 +1,6 @@
 import * as RDialog from '@radix-ui/react-dialog'
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
-import type { DraculaAccent } from '@shared/types'
+import type { Tone } from '../../lib/accent'
 import { PixelBlock } from './PixelBlock'
 import { cn } from '../../lib/cn'
 
@@ -9,7 +9,7 @@ interface Props {
   onOpenChange: (open: boolean) => void
   title: string
   description?: string
-  accent?: DraculaAccent | 'line'
+  accent?: Tone
   width?: string
   children: ReactNode
 }
@@ -22,7 +22,7 @@ const EDGE = 48
  * O posicionamento (centro + deslocamento do arrasto) fica num wrapper e a animação no filho,
  * para o `transform` da animação não sobrescrever o da centralização.
  */
-export function Dialog({ open, onOpenChange, title, description, accent = 'purple', width = 'max-w-lg', children }: Props) {
+export function Dialog({ open, onOpenChange, title, description, accent = 'accent', width = 'max-w-lg', children }: Props) {
   const [offset, setOffset] = useState({ x: 0, y: 0 })
   const drag = useRef<{ startX: number; startY: number; baseX: number; baseY: number } | null>(null)
   const box = useRef<HTMLDivElement>(null)
@@ -61,7 +61,7 @@ export function Dialog({ open, onOpenChange, title, description, accent = 'purpl
   return (
     <RDialog.Root open={open} onOpenChange={onOpenChange}>
       <RDialog.Portal>
-        <RDialog.Overlay className="fixed inset-0 z-40 bg-darker/80" />
+        <RDialog.Overlay className="fixed inset-0 z-40 bg-darker/80 backdrop-blur-[2px]" />
         <RDialog.Content
           ref={box}
           className={cn('fixed left-1/2 top-1/2 z-50 w-[92vw]', width)}
@@ -69,7 +69,7 @@ export function Dialog({ open, onOpenChange, title, description, accent = 'purpl
           onPointerDownOutside={(e) => drag.current && e.preventDefault()}
         >
           <div className="animate-block-drop">
-            <PixelBlock accent={accent} className="flex max-h-[85vh] flex-col bg-bg">
+            <PixelBlock accent={accent} glow className="flex max-h-[85vh] flex-col bg-deep">
               <div
                 className="cursor-move touch-none select-none px-5 pb-3 pt-5"
                 onPointerDown={onPointerDown}
@@ -80,7 +80,7 @@ export function Dialog({ open, onOpenChange, title, description, accent = 'purpl
                 title="Arraste para mover · duplo clique centraliza"
               >
                 <div className="flex items-start gap-3">
-                  <RDialog.Title className="flex-1 font-pixel text-pixel-lg text-fg">{title}</RDialog.Title>
+                  <RDialog.Title className="title flex-1 text-base">{title}</RDialog.Title>
                   <span className="mt-1 grid grid-cols-3 gap-0.5 opacity-50" aria-hidden>
                     {Array.from({ length: 6 }, (_, i) => (
                       <span key={i} className="h-1 w-1 bg-comment" />

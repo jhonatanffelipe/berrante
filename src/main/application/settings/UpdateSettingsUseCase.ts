@@ -3,7 +3,7 @@ import type { Settings } from '@shared/types'
 import type { SettingsRepository } from '@main/domain/repositories'
 import { AppError } from '@main/domain/errors/AppError'
 
-export type SettingsPatch = Partial<Pick<Settings, 'cloneRoot' | 'aiCli' | 'theme' | 'showGrid' | 'stopTimeoutMs'>>
+export type SettingsPatch = Partial<Pick<Settings, 'cloneRoot' | 'aiCli' | 'accent' | 'tintBackground' | 'showGrid' | 'stopTimeoutMs'>>
 
 /** aiEnabled fica de fora: só muda via SetAiEnabledUseCase (exige 2FA). */
 export class UpdateSettingsUseCase {

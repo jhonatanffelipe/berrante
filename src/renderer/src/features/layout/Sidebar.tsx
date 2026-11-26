@@ -1,96 +1,101 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Tetromino } from '../../components/ui/Tetromino'
 import { Term } from '../../components/ui/Term'
 import { PixelButton } from '../../components/ui/PixelButton'
-import { StatusBlock } from '../../components/ui/StatusBlock'
 import { cn } from '../../lib/cn'
-import { accentText } from '../../lib/accent'
+import { useInterval } from '../../lib/useAsync'
+import { useMenuCommand } from '../../lib/useMenuCommand'
 import { useAppData, type View } from './AppData'
 import { useRuntimeCtx } from '../runtime/RuntimeProvider'
 import { ProjectFormDialog } from '../projects/ProjectFormDialog'
 
-function NavItem({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+/** Card de navegação: índice em mono, rótulo e um ponto de estado no canto. */
+function NavCard({ index, active, dot, onClick, children }: { index: string; active: boolean; dot?: 'accent' | 'green' | 'yellow' | 'off'; onClick: () => void; children: ReactNode }) {
   return (
     <button
       onClick={onClick}
-      className={cn('flex w-full items-center gap-3 px-3 py-2 text-left font-pixel text-pixel uppercase', active ? 'bg-line text-fg' : 'text-comment hover:bg-line/40 hover:text-fg')}
+      className={cn(
+        'relative flex w-full flex-col items-center gap-1 rounded-md border px-3 py-3 text-center transition-colors',
+        active ? 'border-accent bg-accent/[0.06] shadow-[0_0_16px_-6px_rgb(var(--c-accent)/0.8)]' : 'border-line/70 bg-deep hover:border-line'
+      )}
     >
-      {children}
+      <span className={cn('absolute right-2.5 top-2.5 h-1.5 w-1.5 rounded-full', dot === 'green' ? 'bg-green' : dot === 'yellow' ? 'animate-blink bg-yellow' : active || dot === 'accent' ? 'bg-accent' : 'bg-comment/50')} />
+      <span className="font-mono text-[11px] text-comment">{index}</span>
+      <span className={cn('flex max-w-full items-center gap-2 truncate font-semibold', active ? 'text-fg' : 'text-fg/85')}>{children}</span>
     </button>
   )
 }
+
+const pad = (n: number) => String(n).padStart(2, '0')
 
 export function Sidebar() {
   const { view, go, projects, auth } = useAppData()
   const { runtimes } = useRuntimeCtx()
   const [creating, setCreating] = useState(false)
+  useMenuCommand((cmd) => cmd.type === 'newProject' && setCreating(true))
+  const [now, setNow] = useState(new Date())
+  useInterval(() => setNow(new Date()), 10_000)
   const is = (v: View['name'], id?: string) => view.name === v && (!id || (view.name === 'project' && view.id === id))
+  const running = Object.values(runtimes).reduce((acc, rt) => acc + rt.services.filter((s) => s.status === 'running').length, 0)
 
   return (
-    <aside className="flex w-64 shrink-0 flex-col bg-deep shadow-[4px_0_0_0_rgb(var(--c-line))]">
-      {/* área de arrastar da janela (titleBarStyle hiddenInset) */}
-      <div className="h-10 shrink-0 [-webkit-app-region:drag]" />
-      <div className="flex items-center gap-3 px-4 pb-4">
-        <div className="flex flex-col gap-0.5">
-          <Tetromino shape="tee" accent="purple" cell={6} />
-          <Tetromino shape="bar" accent="pink" cell={6} />
+    <aside className="flex w-[216px] shrink-0 flex-col gap-3 border-r border-line/60 bg-bg px-3 pb-3">
+      <div className="h-8 shrink-0 [-webkit-app-region:drag]" />
+      <div className="flex flex-col items-center gap-2 border-b border-line/60 pb-4">
+        <div className="flex items-center gap-2">
+          <Tetromino shape="zed" accent="accent" cell={5} />
+          <span className="font-pixel text-[13px] text-accent drop-shadow-[0_0_8px_rgb(var(--c-accent)/0.5)]">BERRANTE</span>
         </div>
-        <div>
-          <h1 className="font-pixel text-pixel-lg text-purple">Berrante</h1>
-          <p className="font-terminal text-lg leading-none text-comment">um toque, a boiada vem</p>
-        </div>
+        <span className="label-muted !text-[9px]">um toque · a boiada vem</span>
       </div>
 
-      <div className="flex items-center justify-between px-4 pb-2">
-        <span className="font-pixel text-[9px] uppercase text-comment">
+      <div className="flex items-center justify-between px-1">
+        <span className="label-muted">
           <Term tech="Projeto: um grupo de repositórios que sobem juntos">Tropas</Term>
         </span>
-        <PixelButton size="sm" accent="purple" onClick={() => setCreating(true)} aria-label="Nova tropa">
+        <PixelButton size="icon" onClick={() => setCreating(true)} aria-label="Nova tropa">
           +
         </PixelButton>
       </div>
-      <nav className="flex-1 space-y-0.5 overflow-auto px-2">
-        {projects.length === 0 ? <p className="px-3 py-2 text-xs text-comment">Nenhuma tropa ainda.</p> : null}
-        {projects.map((p) => {
+      <nav className="-mr-1 flex-1 space-y-2 overflow-auto pr-1">
+        {projects.length === 0 ? <p className="px-1 text-xs text-comment">Nenhuma tropa ainda. Crie no +.</p> : null}
+        {projects.map((p, i) => {
           const rt = runtimes[p.id]
-          const running = rt?.services.filter((s) => s.status === 'running').length ?? 0
+          const up = rt?.services.filter((s) => s.status === 'running').length ?? 0
           return (
-            <button
-              key={p.id}
-              onClick={() => go({ name: 'project', id: p.id })}
-              className={cn('flex w-full items-center gap-3 px-3 py-2 text-left', is('project', p.id) ? 'bg-line' : 'hover:bg-line/40')}
-            >
-              <Tetromino shape={p.icon} accent={p.color} cell={5} />
-              <span className={cn('flex-1 truncate', is('project', p.id) ? 'text-fg' : accentText[p.color])}>{p.name}</span>
-              {running > 0 ? <StatusBlock status={rt?.allRunning ? 'running' : 'starting'} withLabel={false} /> : null}
-            </button>
+            <NavCard key={p.id} index={pad(i + 1)} active={is('project', p.id)} dot={rt?.allRunning ? 'green' : up > 0 ? 'yellow' : 'off'} onClick={() => go({ name: 'project', id: p.id })}>
+              <Tetromino shape={p.icon} accent={p.color} cell={4} />
+              <span className="truncate">{p.name}</span>
+            </NavCard>
           )
         })}
       </nav>
 
-      <div className="space-y-0.5 border-t-4 border-line px-2 py-3">
-        <NavItem active={is('repos')} onClick={() => go({ name: 'repos' })}>
-          <span className="pixel-cell h-2.5 w-2.5 bg-cyan" /> Repositórios
-        </NavItem>
-        <NavItem active={is('ports')} onClick={() => go({ name: 'ports' })}>
-          <span className="pixel-cell h-2.5 w-2.5 bg-orange" />
+      <div className="space-y-2 border-t border-line/60 pt-3">
+        <NavCard index="R" active={is('repos')} onClick={() => go({ name: 'repos' })}>
+          Repositórios
+        </NavCard>
+        <NavCard index="P" active={is('ports')} onClick={() => go({ name: 'ports' })}>
           <Term tech="Portas TCP em LISTEN e PIDs (lsof + ps)" side="right">
             Contar a boiada
           </Term>
-        </NavItem>
-        <NavItem active={is('settings')} onClick={() => go({ name: 'settings' })}>
-          <span className="pixel-cell h-2.5 w-2.5 bg-yellow" /> Configurações
-        </NavItem>
+        </NavCard>
+        <NavCard index="C" active={is('settings')} onClick={() => go({ name: 'settings' })}>
+          Configurações
+        </NavCard>
       </div>
-      <div className="flex items-center gap-2 px-4 pb-4 text-xs text-comment">
-        {auth?.user ? (
-          <>
-            <img src={auth.user.avatarUrl} alt="" className="h-5 w-5 [image-rendering:pixelated]" />
-            <span className="truncate">@{auth.user.login}</span>
-          </>
-        ) : (
-          <span>GitHub desconectado</span>
-        )}
+
+      <div className="rounded-md border border-line/70 bg-deep px-3 py-2.5">
+        <div className="flex items-center justify-between">
+          <span className={cn('font-mono text-[10px] font-bold uppercase tracking-[0.14em]', auth?.user ? 'text-green' : 'text-comment')}>
+            {auth?.user ? 'online' : 'offline'}
+          </span>
+          <span className="font-mono text-[10px] text-comment">{running} de pé</span>
+        </div>
+        <div className="mt-1 flex items-end justify-between">
+          <span className="font-mono text-xl font-bold text-fg">{`${pad(now.getHours())}:${pad(now.getMinutes())}`}</span>
+          {auth?.user ? <img src={auth.user.avatarUrl} alt={`@${auth.user.login}`} title={`@${auth.user.login}`} className="h-5 w-5 rounded-sm" /> : null}
+        </div>
       </div>
       <ProjectFormDialog open={creating} onOpenChange={setCreating} project={null} />
     </aside>

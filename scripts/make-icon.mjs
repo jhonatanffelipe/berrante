@@ -1,101 +1,131 @@
-// Gera build/icon.png (1024x1024): um berrante em pixel art roxo (#bd93f9) sobre #282a36.
-// Desenho procedural numa grade 32x32 — original, sem assets de terceiros.
+// Gera o ícone do app (build/icon.png 1024x1024, usado para .icns, .ico, .deb e dock em dev).
+// Estilo painel de telemetria: placa azul-marinho quase preta, matriz de LEDs apagados ao fundo
+// e o símbolo do Berrante (a peça "cadeirinha"/Z do Tetris) em LEDs azuis acesos.
+// Desenho procedural — original, sem assets de terceiros.
 import { PNG } from 'pngjs'
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
-const GRID = 32
 const SIZE = 1024
-const CELL = SIZE / GRID
+const GRID = 16 // matriz de 16x16 blocos: menos blocos, maiores, legíveis até no Dock pequeno
+const STEP = 46 // passo inteiro: toda borda de bloco cai exatamente num pixel (nitidez)
+const PLATE = STEP * (GRID + 2) // 1 bloco de respiro em cada borda
+const MARGIN = (SIZE - PLATE) / 2 // ~98px (guia de ícones do macOS)
+const CELL = STEP - 6 // vão fixo de 6px entre blocos
+const RADIUS = 180
 
-const hex = (h) => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16), 255]
+const hex = (h) => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)]
 const C = {
-  clear: [0, 0, 0, 0],
-  plate: hex('#282a36'),
-  plateEdge: hex('#44475a'),
-  plateShade: hex('#21222c'),
-  horn: hex('#bd93f9'),
-  hornLight: hex('#d9c2ff'),
-  hornDark: hex('#8a63d2'),
-  outline: hex('#5b3f9a'),
-  band: hex('#ff79c6'),
-  bandDark: hex('#c9559c'),
-  bell: hex('#191a21'),
-  mouth: hex('#f8f8f2'),
-  note: hex('#50fa7b')
+  plateTop: hex('#0f1a2b'),
+  plateBottom: hex('#060b14'),
+  border: hex('#22344f'),
+  off: hex('#121d30'),
+  accent: hex('#2f8cff')
 }
 
-const grid = Array.from({ length: GRID }, () => Array(GRID).fill(C.clear))
-const set = (x, y, c) => { if (x >= 0 && y >= 0 && x < GRID && y < GRID) grid[y][x] = c }
+// ---------- símbolo: a peça "cadeirinha" (Z) do Tetris, toda azul
+// Cada quadrado da peça vira 4x4 LEDs acesos; a peça (3x2 quadrados) fica centrada na matriz 16x16.
+const PIECE = [[0, 0], [1, 0], [1, 1], [2, 1]]
+const SQUARE = 4
+const OX = (GRID - 3 * SQUARE) / 2
+const OY = (GRID - 2 * SQUARE) / 2
+const cells = new Map() // "x,y" -> cor
+for (const [px, py] of PIECE)
+  for (let y = 0; y < SQUARE; y++)
+    for (let x = 0; x < SQUARE; x++) cells.set(`${OX + px * SQUARE + x},${OY + py * SQUARE + y}`, C.accent)
 
-// Placa com cantos chanfrados em degrau (sem arredondado)
-for (let y = 1; y < GRID - 1; y++) for (let x = 1; x < GRID - 1; x++) {
-  const cx = Math.min(x - 1, GRID - 2 - x), cy = Math.min(y - 1, GRID - 2 - y)
-  if (cx + cy < 3) continue
-  const edge = cx === 0 || cy === 0 || cx + cy === 3
-  set(x, y, edge ? C.plateEdge : cy >= GRID - 6 && y > GRID / 2 ? C.plateShade : C.plate)
-}
+// ---------- raster
+const px = new Float32Array(SIZE * SIZE * 4)
+const glow = new Float32Array(SIZE * SIZE)
 
-// Curva central (Bézier quadrática): bocal à esquerda, campânula à direita
-const P0 = [4.5, 8.5], P1 = [8, 28], P2 = [23.5, 16]
-const at = (s) => [
-  (1 - s) ** 2 * P0[0] + 2 * (1 - s) * s * P1[0] + s * s * P2[0],
-  (1 - s) ** 2 * P0[1] + 2 * (1 - s) * s * P1[1] + s * s * P2[1]
-]
-const radius = (s) => 0.85 + 1.6 * s + 3.4 * s ** 6
-const inside = Array.from({ length: GRID }, () => Array(GRID).fill(-1))
-for (let i = 0; i <= 400; i++) {
-  const s = i / 400
-  const [px, py] = at(s)
-  const r = radius(s)
-  for (let y = Math.floor(py - r - 1); y <= py + r + 1; y++) for (let x = Math.floor(px - r - 1); x <= px + r + 1; x++) {
-    if (x < 0 || y < 0 || x >= GRID || y >= GRID) continue
-    if (Math.hypot(x + 0.5 - px, y + 0.5 - py) <= r) inside[y][x] = Math.max(inside[y][x], s)
+function roundedPlate(x, y) {
+  const lx = x - MARGIN, ly = y - MARGIN
+  if (lx < 0 || ly < 0 || lx >= PLATE || ly >= PLATE) return -1
+  const cx = Math.min(lx, PLATE - 1 - lx), cy = Math.min(ly, PLATE - 1 - ly)
+  if (cx < RADIUS && cy < RADIUS) {
+    const d = Math.hypot(RADIUS - cx, RADIUS - cy)
+    if (d > RADIUS) return -1
+    return RADIUS - d
   }
+  return Math.min(cx, cy)
 }
-const isIn = (x, y) => x >= 0 && y >= 0 && x < GRID && y < GRID && inside[y][x] >= 0
-for (let y = 0; y < GRID; y++) for (let x = 0; x < GRID; x++) {
-  if (!isIn(x, y)) continue
-  const s = inside[y][x]
-  let c = C.horn
-  if (!isIn(x, y - 1)) c = C.hornLight
-  if (!isIn(x, y + 1) || !isIn(x + 1, y + 1)) c = C.hornDark
-  if (!isIn(x - 1, y) && !isIn(x, y - 1)) c = C.hornLight
-  // anéis decorativos ao longo do corpo
-  for (const b of [0.3, 0.52, 0.72]) if (Math.abs(s - b) < 0.018) c = isIn(x, y + 1) ? C.band : C.bandDark
-  set(x, y, c)
+
+for (let y = 0; y < SIZE; y++)
+  for (let x = 0; x < SIZE; x++) {
+    const i = (y * SIZE + x) * 4
+    const edge = roundedPlate(x, y)
+    if (edge < 0) continue
+    const t = (y - MARGIN) / PLATE
+    let c = C.plateTop.map((v, k) => v + (C.plateBottom[k] - v) * t)
+    if (edge < 6) c = C.border
+    px[i] = c[0]; px[i + 1] = c[1]; px[i + 2] = c[2]; px[i + 3] = Math.min(1, edge + 1)
+  }
+
+const rect = (gx, gy, color, alpha = 1) => {
+  const x0 = MARGIN + STEP * (gx + 1) + (STEP - CELL) / 2
+  const y0 = MARGIN + STEP * (gy + 1) + (STEP - CELL) / 2
+  const r = 5
+  for (let y = Math.floor(y0); y < y0 + CELL; y++)
+    for (let x = Math.floor(x0); x < x0 + CELL; x++) {
+      const cx = Math.min(x - x0, x0 + CELL - 1 - x), cy = Math.min(y - y0, y0 + CELL - 1 - y)
+      if (cx < r && cy < r && Math.hypot(r - cx, r - cy) > r) continue
+      const i = (y * SIZE + x) * 4
+      for (let k = 0; k < 3; k++) px[i + k] = px[i + k] * (1 - alpha) + color[k] * alpha
+    }
 }
-// contorno
-for (let y = 0; y < GRID; y++) for (let x = 0; x < GRID; x++) {
-  if (isIn(x, y)) continue
-  if ([[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => isIn(x + dx, y + dy))) set(x, y, C.outline)
+
+// LEDs apagados (textura de matriz)
+for (let gy = 0; gy < GRID; gy++) for (let gx = 0; gx < GRID; gx++) if (!cells.has(`${gx},${gy}`)) rect(gx, gy, C.off, 0.55)
+
+// brilho: mapa dos blocos acesos, depois blur
+for (const [k, c] of cells) {
+  const [gx, gy] = k.split(',').map(Number)
+  const cxp = MARGIN + STEP * (gx + 1.5), cyp = MARGIN + STEP * (gy + 1.5)
+  const a = c[3] ?? 1
+  for (let y = Math.floor(cyp - STEP / 2); y < cyp + STEP / 2; y++)
+    for (let x = Math.floor(cxp - STEP / 2); x < cxp + STEP / 2; x++) glow[y * SIZE + x] = Math.max(glow[y * SIZE + x], a)
 }
-// boca da campânula: elipse com aro claro e interior escuro
-const [bx, by] = at(1)
-const rb = radius(1)
-for (let y = 0; y < GRID; y++) for (let x = 0; x < GRID; x++) {
-  const dx = (x + 0.5 - bx) / 1.9, dy = (y + 0.5 - by) / (rb + 0.4)
-  const d = dx * dx + dy * dy
-  if (d <= 1) set(x, y, d <= 0.45 ? C.bell : C.hornLight)
-  else if (d <= 1.45 && x >= Math.floor(bx)) set(x, y, C.outline)
+function blur(src, r) {
+  const tmp = new Float32Array(src.length), out = new Float32Array(src.length)
+  for (let y = 0; y < SIZE; y++) {
+    let acc = 0
+    for (let x = -r; x < SIZE + r; x++) {
+      acc += src[y * SIZE + Math.min(SIZE - 1, Math.max(0, x + r))] - src[y * SIZE + Math.min(SIZE - 1, Math.max(0, x - r - 1))]
+      if (x >= 0 && x < SIZE) tmp[y * SIZE + x] = acc / (2 * r + 1)
+    }
+  }
+  for (let x = 0; x < SIZE; x++) {
+    let acc = 0
+    for (let y = -r; y < SIZE + r; y++) {
+      acc += tmp[Math.min(SIZE - 1, Math.max(0, y + r)) * SIZE + x] - tmp[Math.min(SIZE - 1, Math.max(0, y - r - 1)) * SIZE + x]
+      if (y >= 0 && y < SIZE) out[y * SIZE + x] = acc / (2 * r + 1)
+    }
+  }
+  return out
 }
-const [mx, my] = at(0)
-set(Math.floor(mx) - 1, Math.floor(my), C.mouth)
-set(Math.floor(mx), Math.floor(my), C.mouth)
-set(Math.floor(mx) - 1, Math.floor(my) - 1, C.outline)
-// "som" saindo da campânula: três blocos
-for (const [x, y] of [[27, 9], [27, 17], [28, 13]]) set(x, y, C.note)
+const g = blur(blur(glow, 14), 14)
+for (let p = 0; p < SIZE * SIZE; p++) {
+  const i = p * 4
+  if (px[i + 3] === 0) continue
+  const a = Math.min(1, g[p] * 0.6)
+  for (let k = 0; k < 3; k++) px[i + k] = px[i + k] + (C.accent[k] - px[i + k]) * a * 0.3
+}
+
+// blocos acesos por cima
+for (const [k, c] of cells) {
+  const [gx, gy] = k.split(',').map(Number)
+  rect(gx, gy, c, c[3] ?? 1)
+}
 
 const png = new PNG({ width: SIZE, height: SIZE })
-for (let y = 0; y < SIZE; y++) for (let x = 0; x < SIZE; x++) {
-  const c = grid[Math.floor(y / CELL)][Math.floor(x / CELL)]
-  const i = (y * SIZE + x) * 4
-  png.data[i] = c[0]; png.data[i + 1] = c[1]; png.data[i + 2] = c[2]; png.data[i + 3] = c[3]
+for (let p = 0; p < SIZE * SIZE * 4; p += 4) {
+  png.data[p] = Math.round(px[p]); png.data[p + 1] = Math.round(px[p + 1]); png.data[p + 2] = Math.round(px[p + 2])
+  png.data[p + 3] = Math.round(px[p + 3] * 255)
 }
-mkdirSync(join(root, 'build'), { recursive: true })
-writeFileSync(join(root, 'build', 'icon.png'), PNG.sync.write(png))
-mkdirSync(join(root, 'resources'), { recursive: true })
-writeFileSync(join(root, 'resources', 'icon.png'), PNG.sync.write(png))
-console.log('build/icon.png gerado')
+for (const dir of ['build', 'resources']) {
+  mkdirSync(join(root, dir), { recursive: true })
+  writeFileSync(join(root, dir, 'icon.png'), PNG.sync.write(png))
+}
+console.log('ícone gerado em build/icon.png e resources/icon.png')

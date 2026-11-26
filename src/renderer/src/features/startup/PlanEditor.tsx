@@ -12,6 +12,7 @@ import { Spinner } from '../../components/ui/Spinner'
 import { useToast } from '../../components/ui/Toast'
 import { useAppData } from '../layout/AppData'
 import { useTotp } from '../security/TotpProvider'
+import { Badge } from '../../components/ui/Badge'
 import { AiDiffDialog } from './AiDiffDialog'
 
 const envToText = (env: Record<string, string>) => Object.entries(env).map(([k, v]) => `${k}=${v}`).join('\n')
@@ -27,7 +28,7 @@ const textToEnv = (text: string): Record<string, string> => {
 function DetectionSummary({ d }: { d: RepoDetection }) {
   return (
     <PixelBlock size="sm" accent={d.warnings.length ? 'orange' : 'line'} className="space-y-1 px-4 py-3 text-xs">
-      <p className="font-pixel text-pixel text-fg">{d.repoName}</p>
+      <p className="label">{d.repoName}</p>
       <p className="text-comment">
         {d.packageManager ? `${d.packageManager.name}${d.packageManager.version ? `@${d.packageManager.version}` : ''} (via ${d.packageManager.source})` : 'sem package.json'}
         {d.compose ? ` · compose: ${d.compose.services.length} serviço(s) (${d.compose.source})` : ''}
@@ -154,13 +155,13 @@ export function PlanEditor({ project, onSaved }: { project: Project; onSaved: ()
         <PixelButton accent="cyan" onClick={() => void detect()} disabled={busy !== null}>{busy === 'detect' ? 'Detectando…' : 'Detectar de novo'}</PixelButton>
         <PixelButton onClick={addCommand} disabled={!draft}>+ Comando</PixelButton>
         {settings?.aiEnabled ? (
-          <PixelButton accent="purple" onClick={() => void analyze()} disabled={busy !== null}>{busy === 'ai' ? 'A IA está lendo…' : 'Analisar com IA'}</PixelButton>
+          <PixelButton onClick={() => void analyze()} disabled={busy !== null}>{busy === 'ai' ? 'A IA está lendo…' : 'Analisar com IA'}</PixelButton>
         ) : (
           <span className="text-xs text-comment">IA desligada (configurações → IA, exige 2FA)</span>
         )}
         <div className="ml-auto flex items-center gap-3">
           {busy ? <Spinner /> : null}
-          {dirty ? <span className="font-terminal text-lg text-orange">não salvo</span> : null}
+          {dirty ? <Badge tone="orange">não salvo</Badge> : null}
           <PixelButton accent="green" onClick={() => void save()} disabled={!draft || busy !== null}>Salvar plano</PixelButton>
         </div>
       </div>
@@ -171,7 +172,7 @@ export function PlanEditor({ project, onSaved }: { project: Project; onSaved: ()
         <p className="text-comment">Sem plano ainda. Clique em detectar.</p>
       ) : (
         <PixelBlock className="divide-y-2 divide-line/60">
-          <div className="grid grid-cols-[52px_44px_1fr_1.6fr_1fr_120px_36px] gap-3 px-3 py-2 font-pixel text-[8px] uppercase text-comment">
+          <div className="grid grid-cols-[52px_44px_1fr_1.6fr_1fr_120px_36px] gap-3 px-3 py-2.5 font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-comment">
             <span>ordem</span>
             <span>play</span>
             <span>serviço</span>
@@ -189,7 +190,7 @@ export function PlanEditor({ project, onSaved }: { project: Project; onSaved: ()
               <Switch checked={s.enabled} onCheckedChange={(v) => update(s.id, { enabled: v })} label={`Incluir ${s.name} no play`} />
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className={cn('pixel-cell h-3 w-3 shrink-0', accentBg[s.color])} />
+                  <span className={cn('h-3 w-3 shrink-0 rounded-[1px]', accentBg[s.color])} />
                   <input className="pixel-input !py-1" value={s.name} onChange={(e) => update(s.id, { name: e.target.value })} />
                 </div>
                 <p className="mt-1 text-xs text-comment">{repoName(s.repoId)} · {s.kind}{s.origin !== 'detected' ? ` · ${s.origin}` : ''}</p>

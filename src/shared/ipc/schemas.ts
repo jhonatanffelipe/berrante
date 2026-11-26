@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { BLOCK_SHAPES, DRACULA_ACCENTS } from '../types/palette'
+import { ACCENT_NAMES } from '../theme'
 
 /**
  * Schemas de entrada de cada canal IPC. Ficam no shared para o tipo ser inferido no renderer,
@@ -108,7 +109,8 @@ export const ipcSchemas = {
   'settings:update': z.object({
     cloneRoot: absolutePath.optional(),
     aiCli: z.enum(['claude', 'agy']).optional(),
-    theme: z.enum(['dracula', 'alucard']).optional(),
+    accent: z.enum(ACCENT_NAMES).optional(),
+    tintBackground: z.boolean().optional(),
     showGrid: z.boolean().optional(),
     stopTimeoutMs: z.number().int().min(500).max(60_000).optional()
   }),

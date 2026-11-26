@@ -7,9 +7,9 @@ export function Switch({ checked, onCheckedChange, disabled, label }: { checked:
       onCheckedChange={onCheckedChange}
       disabled={disabled}
       aria-label={label}
-      className="relative h-5 w-10 shrink-0 bg-darker shadow-[0_0_0_2px_rgb(var(--c-line))] disabled:opacity-40 data-[state=checked]:bg-green/30"
+      className="relative h-5 w-9 shrink-0 rounded-sm border border-line bg-darker disabled:opacity-40 data-[state=checked]:border-accent/70 data-[state=checked]:bg-accent/15"
     >
-      <RSwitch.Thumb className="pixel-cell block h-4 w-4 translate-x-0.5 bg-comment transition-transform duration-75 data-[state=checked]:translate-x-[22px] data-[state=checked]:bg-green" />
+      <RSwitch.Thumb className="block h-3 w-3 translate-x-[3px] rounded-[1px] bg-comment transition-transform duration-75 data-[state=checked]:translate-x-[19px] data-[state=checked]:bg-accent data-[state=checked]:shadow-[0_0_8px_rgb(var(--c-accent)/0.6)]" />
     </RSwitch.Root>
   )
 }

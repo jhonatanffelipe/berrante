@@ -11,6 +11,8 @@ import { Dialog } from '../../components/ui/Dialog'
 import { Spinner } from '../../components/ui/Spinner'
 import { useToast } from '../../components/ui/Toast'
 import { useTotp } from '../security/TotpProvider'
+import { PageTitle } from '../../components/ui/PageTitle'
+import { PixelDigits } from '../../components/ui/PixelDigits'
 import { useAppData } from '../layout/AppData'
 
 type OwnerFilter = 'all' | 'berrante' | 'others'
@@ -66,22 +68,34 @@ export function PortsPage() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-4">
-      <div className="flex flex-wrap items-center gap-3">
-        <h2 className="mr-auto font-pixel text-pixel-lg text-orange">
-          <Term tech="Portas TCP em LISTEN (lsof) + processo (ps): porta, PID, comando, usuário, cwd">Contar a boiada</Term>
-        </h2>
-        <input className="pixel-input max-w-xs" placeholder="porta, pid, comando, pasta…" value={search} onChange={(e) => setSearch(e.target.value)} />
-        <select className="pixel-input w-40" value={owner} onChange={(e) => setOwner(e.target.value as OwnerFilter)}>
-          <option value="all">Todos</option>
-          <option value="berrante">Do Berrante</option>
-          <option value="others">De fora</option>
-        </select>
-        <PixelButton accent={paused ? 'green' : 'line'} onClick={() => setPaused((p) => !p)}>{paused ? '▶ ao vivo' : '❚❚ pausar'}</PixelButton>
-      </div>
+      <PageTitle index="P" title="Contar a boiada">
+        <span className="label-muted">
+          <Term tech="Portas TCP em LISTEN (lsof) + processo (ps): porta, PID, comando, usuário, cwd">lsof · ps · a cada 2s</Term>
+        </span>
+      </PageTitle>
+      <PixelBlock className="flex flex-wrap items-end gap-8 px-6 py-5">
+        <div className="flex items-end gap-4">
+          <PixelDigits value={rows?.length ?? 0} cell={9} />
+          <span className="mb-1 font-mono text-xl font-bold">portas</span>
+        </div>
+        <p className="mb-1 text-[13px] text-fg/80">
+          <b className="text-fg">{rows?.filter((r) => r.owner).length ?? 0}</b> do Berrante · <b className="text-fg">{rows?.filter((r) => !r.owner).length ?? 0}</b> de fora ·{' '}
+          <b className="text-fg">{new Set(rows?.map((r) => r.pid)).size}</b> processos
+        </p>
+        <div className="mb-1 ml-auto flex flex-wrap items-center gap-2">
+          <input className="pixel-input w-64" placeholder="porta, pid, comando, pasta…" value={search} onChange={(e) => setSearch(e.target.value)} />
+          <select className="pixel-input w-36" value={owner} onChange={(e) => setOwner(e.target.value as OwnerFilter)}>
+            <option value="all">Todos</option>
+            <option value="berrante">Do Berrante</option>
+            <option value="others">De fora</option>
+          </select>
+          <PixelButton onClick={() => setPaused((p) => !p)}>{paused ? '▶ ao vivo' : '❚❚ pausar'}</PixelButton>
+        </div>
+      </PixelBlock>
       {error ? <p className="text-red">{error}</p> : null}
       <PixelBlock className="overflow-hidden">
         <table className="w-full table-fixed text-left">
-          <thead className="bg-line/60 font-pixel text-[8px] uppercase text-comment">
+          <thead className="border-b border-line/60 font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-comment">
             <tr>
               <th className="w-20 px-3 py-2">porta</th>
               <th className="w-20 px-3 py-2">pid</th>
@@ -97,9 +111,9 @@ export function PortsPage() {
               <tr><td colSpan={7} className="px-3 py-6 text-center"><Spinner label="contando…" /></td></tr>
             ) : null}
             {filtered.map((r) => (
-              <tr key={`${r.pid}-${r.port}`} className={cn('selectable align-top', r.owner && 'bg-green/5')}>
-                <td className="px-3 py-2 font-terminal text-xl leading-none text-cyan">{r.port}</td>
-                <td className="px-3 py-2 font-terminal text-lg leading-none">{r.pid}</td>
+              <tr key={`${r.pid}-${r.port}`} className={cn('selectable align-top hover:bg-line/20', r.owner && 'bg-accent/[0.04]')}>
+                <td className="px-3 py-2.5 font-mono text-[15px] font-bold text-accent">{r.port}</td>
+                <td className="px-3 py-2.5 font-mono text-[13px]">{r.pid}</td>
                 <td className="px-3 py-2">
                   <p className="truncate text-fg">{r.command}</p>
                   <p className="truncate text-xs text-comment" title={r.fullCommand ?? ''}>{r.fullCommand}</p>
@@ -118,7 +132,7 @@ export function PortsPage() {
                   )}
                 </td>
                 <td className="px-3 py-2 text-right">
-                  <PixelButton size="sm" accent="red" onClick={() => setTarget(r)}>matar</PixelButton>
+                  <PixelButton size="sm" className="text-red" onClick={() => setTarget(r)}>matar</PixelButton>
                 </td>
               </tr>
             ))}

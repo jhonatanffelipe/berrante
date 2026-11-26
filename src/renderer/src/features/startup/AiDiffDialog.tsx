@@ -23,7 +23,7 @@ export function AiDiffDialog({ suggestion, onClose, onApply }: { suggestion: AiP
   const toggle = (id: string) => setSelected((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n })
 
   return (
-    <Dialog open={suggestion !== null} onOpenChange={(o) => !o && onClose()} title={`Sugestão da IA (${suggestion?.cli ?? ''})`} description="Revise cada mudança. Nada roda sem a sua confirmação." accent="purple" width="max-w-3xl">
+    <Dialog open={suggestion !== null} onOpenChange={(o) => !o && onClose()} title={`Sugestão da IA (${suggestion?.cli ?? ''})`} description="Revise cada mudança. Nada roda sem a sua confirmação." accent="accent" width="max-w-3xl">
       {suggestion?.notes ? <p className="selectable mb-4 whitespace-pre-wrap bg-darker p-3 text-xs text-fg/80">{suggestion.notes}</p> : null}
       {suggestion && suggestion.diff.length === 0 ? <p className="text-comment">A IA concorda com o plano atual. Nada para mudar.</p> : null}
       <div className="space-y-2">
@@ -32,7 +32,7 @@ export function AiDiffDialog({ suggestion, onClose, onApply }: { suggestion: AiP
             <input type="checkbox" className="mt-1 accent-[rgb(var(--c-purple))]" checked={selected.has(d.serviceId)} onChange={() => toggle(d.serviceId)} />
             <div className="min-w-0 flex-1">
               <div className="flex gap-2">
-                <span className={cn('font-pixel text-[9px] uppercase', TYPE_STYLE[d.type])}>{TYPE_LABEL[d.type]}</span>
+                <span className={cn('font-mono text-[10px] font-bold uppercase', TYPE_STYLE[d.type])}>{TYPE_LABEL[d.type]}</span>
                 <span className="text-fg">{d.name}</span>
                 <span className="text-xs text-comment">{(d.after ?? d.before)?.kind}</span>
               </div>
@@ -54,7 +54,7 @@ export function AiDiffDialog({ suggestion, onClose, onApply }: { suggestion: AiP
         <PixelButton size="sm" onClick={() => setSelected(new Set(suggestion?.diff.map((d) => d.serviceId)))}>Marcar tudo</PixelButton>
         <div className="flex gap-2">
           <PixelButton onClick={onClose}>Descartar</PixelButton>
-          <PixelButton accent="purple" disabled={selected.size === 0} onClick={() => onApply(selected)}>
+          <PixelButton accent="accent" disabled={selected.size === 0} onClick={() => onApply(selected)}>
             Aplicar {selected.size} mudança(s)
           </PixelButton>
         </div>

@@ -11,6 +11,8 @@ import { Dialog } from '../../components/ui/Dialog'
 import { Field } from '../../components/ui/Field'
 import { useToast } from '../../components/ui/Toast'
 import { useAppData } from '../layout/AppData'
+import { PageTitle } from '../../components/ui/PageTitle'
+import { Badge } from '../../components/ui/Badge'
 import { LoginCard } from '../auth/LoginCard'
 
 const PER_PAGE = 25
@@ -95,12 +97,12 @@ function GithubTab() {
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <span className="truncate text-fg">{r.fullName}</span>
-                {r.private ? <span className="bg-pink/20 px-1.5 font-pixel text-[8px] text-pink">privado</span> : null}
-                {r.fork ? <span className="bg-comment/30 px-1.5 font-pixel text-[8px] text-comment">fork</span> : null}
-                {r.archived ? <span className="bg-orange/20 px-1.5 font-pixel text-[8px] text-orange">arquivado</span> : null}
+                {r.private ? <Badge tone="pink">privado</Badge> : null}
+                {r.fork ? <Badge>fork</Badge> : null}
+                {r.archived ? <Badge tone="orange">arquivado</Badge> : null}
               </div>
               <p className="truncate text-xs text-comment">{r.description ?? 'sem descrição'}{r.language ? ` · ${r.language}` : ''}</p>
-              {r.localPath ? <p className="font-terminal text-lg leading-none text-green">✓ {shortPath(r.localPath)}</p> : null}
+              {r.localPath ? <p className="mt-1 font-mono text-xs text-green">✓ {shortPath(r.localPath)}</p> : null}
             </div>
             <a href={r.htmlUrl} target="_blank" rel="noreferrer" className="text-xs text-cyan hover:underline">GitHub ↗</a>
             {!r.localPath ? (
@@ -113,7 +115,7 @@ function GithubTab() {
       {result && result.total > PER_PAGE ? (
         <div className="flex items-center justify-center gap-3">
           <PixelButton disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>‹</PixelButton>
-          <span className="font-terminal text-xl">{page} / {pages} · {result.total} repos</span>
+          <span className="font-mono text-sm font-bold">{page} / {pages} · {result.total} repos</span>
           <PixelButton disabled={page >= pages} onClick={() => setPage((p) => p + 1)}>›</PixelButton>
         </div>
       ) : null}
@@ -160,7 +162,7 @@ function LocalTab() {
   return (
     <div className="space-y-4 pt-4">
       <div className="flex gap-3">
-        <PixelButton accent="purple" onClick={() => void importFolder()} disabled={busy === 'import'}>Importar pasta local</PixelButton>
+        <PixelButton accent="accent" onClick={() => void importFolder()} disabled={busy === 'import'}>Importar pasta local</PixelButton>
       </div>
       {repos.length === 0 ? (
         <EmptyState title="Nenhum repositório local">Clone do GitHub ou importe uma pasta que já existe na sua máquina.</EmptyState>
@@ -190,7 +192,7 @@ function LocalTab() {
 export function ReposPage() {
   return (
     <div className="mx-auto max-w-5xl">
-      <h2 className="mb-4 font-pixel text-pixel-lg text-cyan">Repositórios</h2>
+      <PageTitle index="R" title="Repositórios" />
       <Tabs defaultValue="local">
         <TabsList items={[{ value: 'local', label: 'Na máquina' }, { value: 'github', label: 'No GitHub' }]} />
         <TabsContent value="local"><LocalTab /></TabsContent>

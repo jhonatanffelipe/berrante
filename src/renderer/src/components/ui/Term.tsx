@@ -6,10 +6,10 @@ export function Term({ children, tech, side = 'bottom' }: { children: ReactNode;
   return (
     <Tooltip.Root delayDuration={250}>
       <Tooltip.Trigger asChild>
-        <span className="cursor-help underline decoration-comment decoration-dotted underline-offset-4">{children}</span>
+        <span className="cursor-help underline decoration-comment/60 decoration-dotted underline-offset-4">{children}</span>
       </Tooltip.Trigger>
       <Tooltip.Portal>
-        <Tooltip.Content side={side} sideOffset={6} className="pixel-block pixel-block-sm z-50 max-w-xs bg-darker px-3 py-2 font-mono text-xs text-fg">
+        <Tooltip.Content side={side} sideOffset={6} className="z-50 max-w-xs rounded border border-line bg-darker px-3 py-2 text-xs text-fg shadow-lg">
           {tech}
         </Tooltip.Content>
       </Tooltip.Portal>
@@ -23,7 +23,7 @@ export function Tip({ children, label }: { children: ReactNode; label: string })
     <Tooltip.Root delayDuration={300}>
       <Tooltip.Trigger asChild>{children}</Tooltip.Trigger>
       <Tooltip.Portal>
-        <Tooltip.Content sideOffset={6} className="pixel-block pixel-block-sm z-50 bg-darker px-2 py-1 font-mono text-xs text-fg">
+        <Tooltip.Content sideOffset={6} className="z-50 rounded border border-line bg-darker px-2 py-1 text-xs text-fg shadow-lg">
           {label}
         </Tooltip.Content>
       </Tooltip.Portal>

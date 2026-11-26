@@ -60,7 +60,7 @@ export function TotpProvider({ children }: { children: ReactNode }) {
       <Dialog open={state !== null} onOpenChange={(o) => !o && cancel()} title="Código 2FA" description={state?.reason} accent="yellow" width="max-w-sm">
         <form onSubmit={submit} className="space-y-4">
           <Field label="Autenticador ou código de recuperação" hint="6 dígitos do app, ou um código xxxxx-xxxxx">
-            <input autoFocus className="pixel-input text-center font-terminal !text-2xl tracking-[0.4em]" value={code} onChange={(e) => setCode(e.target.value)} maxLength={11} autoComplete="one-time-code" />
+            <input autoFocus className="pixel-input text-center font-mono !text-xl font-bold tracking-[0.4em]" value={code} onChange={(e) => setCode(e.target.value)} maxLength={11} autoComplete="one-time-code" />
           </Field>
           {state?.error ? <p className="text-red">{state.error}</p> : null}
           <div className="flex justify-end gap-2">

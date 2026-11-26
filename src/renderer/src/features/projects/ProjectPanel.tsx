@@ -6,16 +6,20 @@ import { call, errorMessage } from '../../lib/api'
 import { useInterval } from '../../lib/useAsync'
 import { PixelButton } from '../../components/ui/PixelButton'
 import { Term } from '../../components/ui/Term'
+import { StatusBlock } from '../../components/ui/StatusBlock'
 import { Tetromino } from '../../components/ui/Tetromino'
 import { Tabs, TabsContent, TabsList } from '../../components/ui/Tabs'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { Dialog } from '../../components/ui/Dialog'
 import { PixelBlock } from '../../components/ui/PixelBlock'
+import { PixelDigits } from '../../components/ui/PixelDigits'
+import { Badge } from '../../components/ui/Badge'
 import { useToast } from '../../components/ui/Toast'
 import { useAppData } from '../layout/AppData'
 import { useProjectRuntime } from '../runtime/RuntimeProvider'
 import { LogViewer } from '../runtime/LogViewer'
 import { ProjectFormDialog } from './ProjectFormDialog'
+import { useMenuCommand } from '../../lib/useMenuCommand'
 import { RepoCard } from './RepoCard'
 import { LineClear } from './LineClear'
 import { PlanEditor } from '../startup/PlanEditor'
@@ -51,6 +55,12 @@ export function ProjectPanel({ project }: { project: Project }) {
 
   const projectRepos = project.repositoryIds.map((id) => repos.find((r) => r.id === id)).filter((r): r is NonNullable<typeof r> => Boolean(r))
   const anyActive = runtime?.services.some((s) => s.status === 'running' || s.status === 'starting') ?? false
+  const plan = project.plan?.services ?? []
+  const playable = plan.filter((s) => s.enabled && s.kind !== 'setup')
+  const stateOf = new Map((runtime?.services ?? []).map((s) => [s.serviceId, s]))
+  const running = playable.filter((s) => stateOf.get(s.id)?.status === 'running').length
+  const counts = { compose: plan.filter((s) => s.kind === 'compose').length, script: plan.filter((s) => s.kind === 'script').length, setup: plan.filter((s) => s.kind === 'setup').length }
+  const ports = [...new Set((runtime?.services ?? []).flatMap((s) => s.ports))].sort((a, b) => a - b)
 
   const play = async (ignoreConflicts = false) => {
     setPlaying(true)
@@ -101,60 +111,89 @@ export function ProjectPanel({ project }: { project: Project }) {
     }
   }
 
+  useMenuCommand((cmd) => {
+    if (cmd.type === 'play' && !playing && project.plan) void play()
+    else if (cmd.type === 'stop' && !stopping && anyActive) void stopAll()
+    else if (cmd.type === 'editProject') setEditing(true)
+    else if (cmd.type === 'tab') setTab(cmd.tab)
+  })
+
   const actionState = actionLog ? runtime?.services.find((s) => runtimeKey(project.id, s.serviceId) === actionLog.key) : undefined
 
   return (
     <div className="relative mx-auto max-w-6xl">
       {celebrate ? <LineClear onDone={() => setCelebrate(false)} /> : null}
-      <header className="mb-6 flex flex-wrap items-center gap-4">
-        <Tetromino shape={project.icon} accent={project.color} cell={10} />
-        <div className="min-w-0 flex-1">
-          <h2 className="truncate font-pixel text-pixel-lg text-fg">{project.name}</h2>
-          <p className="font-terminal text-xl leading-none text-comment">
-            {projectRepos.length} repositório(s) · {project.plan?.services.filter((s) => s.enabled).length ?? 0} serviço(s) no play
+      <PixelBlock className="mb-5 grid grid-cols-[minmax(0,1fr)_minmax(400px,460px)] gap-6 px-6 py-5">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <Tetromino shape={project.icon} accent={project.color} cell={5} className="mr-1" />
+            <span className="label">tropa</span>
+            <span className="text-comment">·</span>
+            <span className="label truncate">{project.name}</span>
+            <span className="text-comment">·</span>
+            <span className="label-muted">{projectRepos.length} repo(s)</span>
+            <Badge tone={runtime?.allRunning ? 'green' : running > 0 ? 'yellow' : 'line'}>{runtime?.allRunning ? 'boiada completa' : running > 0 ? 'parcial' : 'parado'}</Badge>
+          </div>
+          <div className="mt-4 flex items-end gap-4">
+            <PixelDigits value={`${running}/${playable.length}`} cell={9} />
+            <span className="mb-1 font-mono text-xl font-bold text-fg">de pé</span>
+          </div>
+          <p className="mt-4 text-[13px] text-fg/80">
+            <b className="text-fg">{playable.length}</b> no play · <b className="text-fg">{counts.compose}</b> container(s) · <b className="text-fg">{counts.script}</b> script(s) ·{' '}
+            <b className="text-fg">{counts.setup}</b> preparo(s) · <b className="text-fg">{project.plan?.actions.length ?? 0}</b> ação(ões)
           </p>
         </div>
-        <PixelButton size="lg" accent="green" disabled={playing || !project.plan} onClick={() => void play()}>
-          ▶ <Term tech="Start all: sobe todos os serviços habilitados na ordem do plano">{playing ? 'Tocando…' : 'Tocar o berrante'}</Term>
-        </PixelButton>
-        <PixelButton size="lg" accent="red" disabled={stopping || !anyActive} onClick={() => void stopAll()}>
-          ■ <Term tech="Stop all: para processos (SIGTERM → SIGKILL no grupo) e containers da tropa">Recolher a boiada</Term>
-        </PixelButton>
-        <Menu.Root>
-          <Menu.Trigger asChild>
-            <PixelButton aria-label="Mais opções">⋮</PixelButton>
-          </Menu.Trigger>
-          <Menu.Portal>
-            <Menu.Content align="end" sideOffset={6} className="pixel-block pixel-block-sm z-50 min-w-40 bg-darker p-1">
-              <Menu.Item onSelect={() => setEditing(true)} className="cursor-pointer px-3 py-2 outline-none data-[highlighted]:bg-line">Editar tropa</Menu.Item>
-              <Menu.Item onSelect={() => setConfirmDelete(true)} className="cursor-pointer px-3 py-2 text-red outline-none data-[highlighted]:bg-line">Apagar tropa</Menu.Item>
-            </Menu.Content>
-          </Menu.Portal>
-        </Menu.Root>
-      </header>
+        <div className="flex min-w-0 flex-col justify-between gap-4 border-l border-line/60 pl-6">
+          <div>
+            <span className="label-muted">portas</span>
+            <div className="mt-2 flex max-h-24 flex-wrap gap-1.5 overflow-auto">
+              {ports.length ? ports.map((p) => <Badge key={p} tone="green">:{p}</Badge>) : <span className="font-mono text-xs text-comment">nenhuma aberta</span>}
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <PixelButton size="lg" accent="accent" disabled={playing || !project.plan} onClick={() => void play()}>
+              ▶ <Term tech="Start all: sobe todos os serviços habilitados na ordem do plano">{playing ? 'Tocando…' : 'Tocar o berrante'}</Term>
+            </PixelButton>
+            <PixelButton size="lg" className="text-red" disabled={stopping || !anyActive} onClick={() => void stopAll()}>
+              ■ <Term tech="Stop all: para processos (SIGTERM → SIGKILL no grupo) e containers da tropa">Recolher</Term>
+            </PixelButton>
+            <Menu.Root>
+              <Menu.Trigger asChild>
+                <PixelButton size="lg" aria-label="Mais opções">⋮</PixelButton>
+              </Menu.Trigger>
+              <Menu.Portal>
+                <Menu.Content align="end" sideOffset={6} className="z-50 min-w-40 rounded border border-line bg-deep p-1 shadow-lg">
+                  <Menu.Item onSelect={() => setEditing(true)} className="cursor-pointer rounded-sm px-3 py-2 outline-none data-[highlighted]:bg-line">Editar tropa</Menu.Item>
+                  <Menu.Item onSelect={() => setConfirmDelete(true)} className="cursor-pointer rounded-sm px-3 py-2 text-red outline-none data-[highlighted]:bg-line">Apagar tropa</Menu.Item>
+                </Menu.Content>
+              </Menu.Portal>
+            </Menu.Root>
+          </div>
+        </div>
+      </PixelBlock>
 
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList items={[{ value: 'boiada', label: 'Boiada' }, { value: 'plano', label: 'Plano de subida' }]} />
-        <TabsContent value="boiada" className="space-y-5 pt-5">
+        <TabsContent value="boiada" className="space-y-4 pt-5">
           {projectRepos.length === 0 ? (
             <EmptyState title="Tropa vazia">Edite a tropa e adicione repositórios.</EmptyState>
           ) : !project.plan ? (
             <EmptyState title="Sem plano de subida">
-              Vá em <button className="text-purple underline" onClick={() => setTab('plano')}>Plano de subida</button> e detecte como cada repo sobe.
+              Vá em <button className="text-accent underline" onClick={() => setTab('plano')}>Plano de subida</button> e detecte como cada repo sobe.
             </EmptyState>
           ) : (
             projectRepos.map((repo) => <RepoCard key={repo.id} project={project} repo={repo} runtime={runtime} now={now} onAction={(r, n) => void runAction(r, n)} />)
           )}
           {actionLog ? (
-            <PixelBlock accent="orange">
-              <header className="flex items-center gap-3 bg-line/50 px-4 py-2">
-                <span className="font-pixel text-pixel text-orange">ação: {actionLog.name}</span>
-                <span className="font-terminal text-lg text-comment">{actionState?.status ?? ''}</span>
+            <PixelBlock accent="accent" className="overflow-hidden">
+              <header className="flex items-center gap-3 border-b border-line/60 px-5 py-3">
+                <span className="label">ação · {actionLog.name}</span>
+                {actionState ? <StatusBlock status={actionState.status} /> : null}
                 <div className="ml-auto flex gap-1">
                   {actionState?.status === 'running' ? (
-                    <PixelButton size="sm" accent="red" onClick={() => void call('runtime:stopService', { projectId: project.id, serviceId: actionLog.serviceId })}>■</PixelButton>
+                    <PixelButton size="icon" className="text-red" onClick={() => void call('runtime:stopService', { projectId: project.id, serviceId: actionLog.serviceId })}>■</PixelButton>
                   ) : null}
-                  <PixelButton size="sm" onClick={() => setActionLog(null)}>✕</PixelButton>
+                  <PixelButton size="icon" onClick={() => setActionLog(null)}>✕</PixelButton>
                 </div>
               </header>
               <LogViewer logKey={actionLog.key} height={240} />
@@ -169,7 +208,7 @@ export function ProjectPanel({ project }: { project: Project }) {
       <Dialog open={conflicts !== null} onOpenChange={(o) => !o && setConflicts(null)} title="Porta ocupada no pasto" description="Antes de tocar o berrante, estas portas já estão em uso por outros processos:" accent="orange">
         <div className="space-y-2">
           {conflicts?.map((c) => (
-            <div key={`${c.serviceId}-${c.port}`} className="bg-darker px-3 py-2">
+            <div key={`${c.serviceId}-${c.port}`} className="rounded border border-line bg-darker px-3 py-2 font-mono text-xs">
               <span className="text-orange">:{c.port}</span> → {c.serviceName} <span className="text-comment">(pid {c.pid}: {c.command.slice(0, 80)})</span>
             </div>
           ))}

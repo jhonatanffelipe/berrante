@@ -62,7 +62,7 @@ export function ProjectFormDialog({ open, onOpenChange, project }: Props) {
           <Field label="Cor">
             <div className="flex flex-wrap gap-2">
               {DRACULA_ACCENTS.map((c) => (
-                <button key={c} type="button" aria-label={c} onClick={() => setColor(c)} className={cn('pixel-cell h-7 w-7', accentBg[c], color === c && 'outline outline-2 outline-offset-2 outline-fg')} />
+                <button key={c} type="button" aria-label={c} onClick={() => setColor(c)} className={cn('h-7 w-7 rounded-sm', accentBg[c], color === c && 'outline outline-2 outline-offset-2 outline-fg')} />
               ))}
             </div>
           </Field>
@@ -83,7 +83,7 @@ export function ProjectFormDialog({ open, onOpenChange, project }: Props) {
               const idx = repoIds.indexOf(r.id)
               return (
                 <button key={r.id} type="button" onClick={() => toggle(r.id)} className={cn('flex w-full items-center gap-3 px-2 py-1.5 text-left', idx >= 0 ? 'bg-line' : 'hover:bg-line/40')}>
-                  <span className={cn('pixel-cell flex h-5 w-5 items-center justify-center font-pixel text-[8px]', idx >= 0 ? `${accentBg[color]} text-bg` : 'bg-deep')}>{idx >= 0 ? idx + 1 : ''}</span>
+                  <span className={cn('flex h-5 w-5 items-center justify-center rounded-sm border font-mono text-[10px] font-bold', idx >= 0 ? `${accentBg[color]} border-transparent text-on-accent` : 'border-line bg-darker')}>{idx >= 0 ? idx + 1 : ''}</span>
                   <span className="flex-1">{r.name}</span>
                   <span className="truncate text-xs text-comment">{shortPath(r.path)}</span>
                 </button>

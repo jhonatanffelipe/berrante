@@ -1,5 +1,5 @@
-import type { BlockShape, DraculaAccent } from '@shared/types'
-import { accentBg } from '../../lib/accent'
+import type { BlockShape } from '@shared/types'
+import { accentBg, type Tone } from '../../lib/accent'
 import { cn } from '../../lib/cn'
 
 /** Coordenadas [x, y] dos 4 quadrados de cada formato. */
@@ -15,7 +15,7 @@ export const SHAPES: Record<BlockShape, [number, number][]> = {
 
 interface Props {
   shape: BlockShape
-  accent: DraculaAccent
+  accent: Tone
   cell?: number
   className?: string
 }

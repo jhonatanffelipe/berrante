@@ -1,12 +1,15 @@
 import type { AiCliName } from './startup'
 
-export type ThemeName = 'dracula' | 'alucard'
+import type { AccentName } from '../theme'
+export type { AccentName } from '../theme'
 
 export interface Settings {
   cloneRoot: string
   aiCli: AiCliName
   aiEnabled: boolean
-  theme: ThemeName
+  /** Cor de destaque; o fundo é tingido com o matiz dela. */
+  accent: AccentName
+  tintBackground: boolean
   showGrid: boolean
   stopTimeoutMs: number
 }

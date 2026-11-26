@@ -76,13 +76,13 @@ export function LoginCard() {
   }
 
   return (
-    <PixelBlock accent="purple" className="mx-auto max-w-xl p-6">
-      <h2 className="font-pixel text-pixel-lg text-purple">Entrar com GitHub</h2>
+    <PixelBlock accent="accent" glow className="mx-auto max-w-xl p-6">
+      <h2 className="title text-lg">Entrar com GitHub</h2>
       <p className="mt-2 text-comment">Para listar e clonar seus repositórios. O token fica cifrado no Keychain (safeStorage) e nunca vai para log.</p>
       {flow ? (
         <div className="mt-5 space-y-4">
           <p>Digite este código na página que abriu no navegador:</p>
-          <div className="selectable bg-darker py-4 text-center font-pixel text-2xl tracking-[0.3em] text-yellow">{flow.userCode}</div>
+          <div className="selectable rounded border border-line bg-darker py-4 text-center font-mono text-3xl font-bold tracking-[0.3em] text-accent">{flow.userCode}</div>
           <div className="flex items-center justify-between">
             <Spinner label="esperando a autorização…" />
             <div className="flex gap-2">
@@ -93,7 +93,7 @@ export function LoginCard() {
         </div>
       ) : (
         <div className="mt-5 flex flex-wrap gap-3">
-          <PixelButton accent="purple" onClick={() => void startDevice()} disabled={busy || !auth?.deviceFlowAvailable} title={auth?.deviceFlowAvailable ? '' : 'Configure BERRANTE_GITHUB_CLIENT_ID em config/.env'}>
+          <PixelButton accent="accent" onClick={() => void startDevice()} disabled={busy || !auth?.deviceFlowAvailable} title={auth?.deviceFlowAvailable ? '' : 'Configure BERRANTE_GITHUB_CLIENT_ID em config/.env'}>
             Entrar (Device Flow)
           </PixelButton>
           <PixelButton accent="cyan" onClick={() => void importGh()} disabled={busy}>

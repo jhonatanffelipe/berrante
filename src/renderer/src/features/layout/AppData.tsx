@@ -1,6 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
 import type { AuthStatus, LocalRepository, Project, Settings } from '@shared/types'
 import { call } from '../../lib/api'
+import { applyTheme } from '../../lib/applyTheme'
+import { useMenuCommand } from '../../lib/useMenuCommand'
 
 export type View = { name: 'project'; id: string } | { name: 'repos' } | { name: 'ports' } | { name: 'settings' }
 
@@ -43,9 +45,14 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!settings) return
-    document.documentElement.dataset.theme = settings.theme
+    applyTheme(settings.accent, settings.tintBackground)
     document.body.classList.toggle('bg-grid', settings.showGrid)
   }, [settings])
+
+  useMenuCommand((cmd) => {
+    if (cmd.type === 'go') setView({ name: cmd.view } as View)
+    else if (cmd.type === 'project') setView({ name: 'project', id: cmd.id })
+  })
 
   const upsertProject = (p: Project) => setProjects((all) => (all.some((x) => x.id === p.id) ? all.map((x) => (x.id === p.id ? p : x)) : [...all, p]))
 

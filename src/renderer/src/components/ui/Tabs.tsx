@@ -6,12 +6,12 @@ export const TabsContent = RTabs.Content
 
 export function TabsList({ items }: { items: { value: string; label: ReactNode }[] }) {
   return (
-    <RTabs.List className="flex gap-1 border-b-4 border-line">
+    <RTabs.List className="flex gap-6 border-b border-line">
       {items.map((i) => (
         <RTabs.Trigger
           key={i.value}
           value={i.value}
-          className="-mb-1 px-4 py-2 font-pixel text-pixel uppercase text-comment data-[state=active]:bg-line data-[state=active]:text-fg hover:text-fg"
+          className="-mb-px border-b-2 border-transparent pb-2.5 pt-1 font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-comment hover:text-fg data-[state=active]:border-accent data-[state=active]:text-fg"
         >
           {i.label}
         </RTabs.Trigger>

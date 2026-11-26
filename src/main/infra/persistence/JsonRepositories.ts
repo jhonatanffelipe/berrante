@@ -55,7 +55,8 @@ export const DEFAULT_SETTINGS = (): Settings => ({
   cloneRoot: join(homedir(), 'www'),
   aiCli: 'claude',
   aiEnabled: false,
-  theme: 'dracula',
+  accent: 'azul',
+  tintBackground: true,
   showGrid: true,
   stopTimeoutMs: 5000
 })
@@ -65,8 +66,13 @@ export class JsonSettingsRepository implements SettingsRepository {
   constructor(dir: string) {
     this.file = new JsonFile(join(dir, 'settings.json'), () => ({}))
   }
+  /** Só chaves conhecidas (descarta campos de versões antigas, como `theme`). */
   async get(): Promise<Settings> {
-    return { ...DEFAULT_SETTINGS(), ...(await this.file.read()) }
+    const defaults = DEFAULT_SETTINGS()
+    const stored = (await this.file.read()) as Record<string, unknown>
+    const merged = { ...defaults } as Record<string, unknown>
+    for (const key of Object.keys(defaults)) if (stored[key] !== undefined) merged[key] = stored[key]
+    return merged as unknown as Settings
   }
   async save(settings: Settings): Promise<void> {
     await this.file.write(settings)

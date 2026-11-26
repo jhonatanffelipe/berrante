@@ -1,3 +1,4 @@
+import type { MenuCommand } from '../menu'
 import type { z } from 'zod'
 import type { IpcSchemas } from './schemas'
 import type {
@@ -95,10 +96,11 @@ export type IpcOutput<C extends IpcChannel> = IpcOutputs[C]
 export interface IpcEvents {
   'runtime:logs': LogChunk[]
   'runtime:status': ProjectRuntime
+  'menu:command': MenuCommand
 }
 export type IpcEventName = keyof IpcEvents
 
-export const IPC_EVENT_NAMES: readonly IpcEventName[] = ['runtime:logs', 'runtime:status']
+export const IPC_EVENT_NAMES: readonly IpcEventName[] = ['runtime:logs', 'runtime:status', 'menu:command']
 
 export type PlanForSave = StartupPlan
 

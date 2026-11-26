@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import type { AiCliName, AiCliStatus, TotpSetup, TotpStatus } from '@shared/types'
+import { ACCENTS, ACCENT_NAMES } from '@shared/theme'
+import { cn } from '../../lib/cn'
 import { call, errorMessage } from '../../lib/api'
 import { useAsync } from '../../lib/useAsync'
 import { shortPath } from '../../lib/format'
@@ -10,12 +12,13 @@ import { Field } from '../../components/ui/Field'
 import { Dialog } from '../../components/ui/Dialog'
 import { useToast } from '../../components/ui/Toast'
 import { useAppData } from '../layout/AppData'
+import { PageTitle } from '../../components/ui/PageTitle'
 import { useTotp } from '../security/TotpProvider'
 
-function Section({ title, children, accent = 'line' as const }: { title: string; children: React.ReactNode; accent?: 'line' | 'purple' | 'yellow' | 'red' | 'cyan' }) {
+function Section({ title, children, accent = 'line' as const }: { title: string; children: React.ReactNode; accent?: 'line' | 'purple' | 'yellow' | 'red' | 'cyan' | 'accent' }) {
   return (
     <PixelBlock accent={accent} className="space-y-4 p-5">
-      <h3 className="font-pixel text-pixel text-fg">{title}</h3>
+      <h3 className="label">{title}</h3>
       {children}
     </PixelBlock>
   )
@@ -66,7 +69,7 @@ function TotpSection({ status, onChange }: { status: TotpStatus | null; onChange
   }
 
   return (
-    <Section title="Autenticação em dois fatores (TOTP)" accent="yellow">
+    <Section title="Autenticação em dois fatores (TOTP)">
       <p className="text-comment">Exigida para habilitar e usar a IA e para matar processos que não são do Berrante. O segredo fica cifrado no safeStorage.</p>
       {status?.enabled ? (
         <div className="space-y-3">
@@ -94,7 +97,7 @@ function TotpSection({ status, onChange }: { status: TotpStatus | null; onChange
               </div>
             </div>
             <Field label="Código de 6 dígitos do app">
-              <input className="pixel-input text-center font-terminal !text-2xl tracking-[0.4em]" value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))} maxLength={6} autoFocus />
+              <input className="pixel-input text-center font-mono !text-xl font-bold tracking-[0.4em]" value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))} maxLength={6} autoFocus />
             </Field>
             <div className="flex justify-end gap-2">
               <PixelButton onClick={() => setSetup(null)}>Cancelar</PixelButton>
@@ -105,7 +108,7 @@ function TotpSection({ status, onChange }: { status: TotpStatus | null; onChange
       </Dialog>
 
       <Dialog open={codes !== null} onOpenChange={(o) => !o && setCodes(null)} title="Códigos de recuperação" description="Guarde agora (ex: no 1Password). Cada um vale uma vez e eles não serão mostrados de novo." accent="yellow">
-        <div className="selectable grid grid-cols-2 gap-2 bg-darker p-4 font-terminal text-2xl text-yellow">
+        <div className="selectable grid grid-cols-2 gap-2 rounded border border-line bg-darker p-4 font-mono text-lg font-bold text-accent">
           {codes?.map((c) => <span key={c}>{c}</span>)}
         </div>
         <div className="mt-4 flex justify-end gap-2">
@@ -145,7 +148,7 @@ export function SettingsPage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <h2 className="font-pixel text-pixel-lg text-yellow">Configurações</h2>
+      <PageTitle index="C" title="Configurações" />
 
       <Section title="Pasta raiz dos clones">
         <div className="flex items-center gap-3">
@@ -154,7 +157,7 @@ export function SettingsPage() {
         </div>
       </Section>
 
-      <Section title="IA (fallback de detecção)" accent="purple">
+      <Section title="IA (fallback de detecção)">
         <Field label="CLI">
           <div className="flex gap-3">
             {(ai.data ?? []).map((c) => (
@@ -176,25 +179,44 @@ export function SettingsPage() {
 
       <TotpSection status={totp.data} onChange={(s) => { totp.setData(s); if (!s.enabled) void call('settings:get').then(setSettings) }} />
 
-      <Section title="Aparência e processos" accent="cyan">
+      <Section title="Aparência">
+        <Field label="Cor de destaque" hint="O fundo escuro é tingido com o tom da cor escolhida.">
+          <div className="flex flex-wrap gap-2">
+            {ACCENT_NAMES.map((name) => {
+              const active = settings.accent === name
+              return (
+                <button
+                  key={name}
+                  type="button"
+                  onClick={() => void patch({ accent: name })}
+                  className={cn('flex items-center gap-2 rounded border px-2.5 py-1.5 font-mono text-[11px] font-bold uppercase tracking-[0.12em]', active ? 'border-accent bg-accent/10 text-fg' : 'border-line text-comment hover:text-fg')}
+                >
+                  <span className="h-3.5 w-3.5 rounded-[2px]" style={{ background: ACCENTS[name].hex, boxShadow: active ? `0 0 10px ${ACCENTS[name].hex}` : undefined }} />
+                  {ACCENTS[name].label}
+                </button>
+              )
+            })}
+          </div>
+        </Field>
         <div className="flex flex-wrap items-center gap-6">
-          <Field label="Tema">
-            <select className="pixel-input w-48" value={settings.theme} onChange={(e) => void patch({ theme: e.target.value as 'dracula' | 'alucard' })}>
-              <option value="dracula">Dracula (escuro)</option>
-              <option value="alucard">Alucard (claro)</option>
-            </select>
-          </Field>
+          <label className="flex items-center gap-3">
+            <Switch checked={settings.tintBackground} onCheckedChange={(v) => void patch({ tintBackground: v })} label="Tingir o fundo" />
+            Tingir o fundo com a cor de destaque <span className="text-comment">(desligado: preto e cinza neutros)</span>
+          </label>
           <label className="flex items-center gap-3">
             <Switch checked={settings.showGrid} onCheckedChange={(v) => void patch({ showGrid: v })} label="Grid de fundo" />
             Grid de fundo
           </label>
-          <Field label="SIGTERM → SIGKILL (ms)">
-            <input type="number" min={500} max={60000} step={500} className="pixel-input w-32" value={settings.stopTimeoutMs} onChange={(e) => void patch({ stopTimeoutMs: Number(e.target.value) })} />
-          </Field>
         </div>
       </Section>
 
-      <Section title="Conta GitHub" accent="red">
+      <Section title="Processos">
+        <Field label="SIGTERM → SIGKILL (ms)">
+          <input type="number" min={500} max={60000} step={500} className="pixel-input w-32" value={settings.stopTimeoutMs} onChange={(e) => void patch({ stopTimeoutMs: Number(e.target.value) })} />
+        </Field>
+      </Section>
+
+      <Section title="Conta GitHub">
         {auth?.user ? (
           <div className="flex items-center gap-3">
             <img src={auth.user.avatarUrl} alt="" className="h-8 w-8" />

@@ -90,13 +90,9 @@ export class RuntimeService {
     const planIds = (project.plan?.services ?? []).map((s) => s.id)
     const actionIds = [...this.states.values()].filter((s) => s.projectId === project.id && s.serviceId.startsWith('action:')).map((s) => s.serviceId)
     const services = [...planIds, ...actionIds].map((id) => this.get(project.id, id))
-    const enabled = (project.plan?.services ?? []).filter((s) => s.enabled)
-    const allRunning =
-      enabled.length > 0 &&
-      enabled.every((s) => {
-        const st = this.get(project.id, s.id).status
-        return s.kind === 'setup' ? st === 'exited' : st === 'running'
-      })
+    // Preparos (rede, install) terminam e não contam: "boiada completa" = todo serviço longo de pé.
+    const enabled = (project.plan?.services ?? []).filter((s) => s.enabled && s.kind !== 'setup')
+    const allRunning = enabled.length > 0 && enabled.every((s) => this.get(project.id, s.id).status === 'running')
     return { projectId: project.id, services, allRunning }
   }
 

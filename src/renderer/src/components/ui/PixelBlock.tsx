@@ -1,24 +1,14 @@
 import type { HTMLAttributes } from 'react'
+import { accentEdge, type Tone } from '../../lib/accent'
 import { cn } from '../../lib/cn'
-import type { DraculaAccent } from '@shared/types'
-
-const edge: Record<DraculaAccent | 'line', string> = {
-  line: '[--edge:rgb(var(--c-line))]',
-  cyan: '[--edge:rgb(var(--c-cyan))]',
-  green: '[--edge:rgb(var(--c-green))]',
-  orange: '[--edge:rgb(var(--c-orange))]',
-  pink: '[--edge:rgb(var(--c-pink))]',
-  purple: '[--edge:rgb(var(--c-purple))]',
-  red: '[--edge:rgb(var(--c-red))]',
-  yellow: '[--edge:rgb(var(--c-yellow))]'
-}
 
 interface Props extends HTMLAttributes<HTMLDivElement> {
-  accent?: DraculaAccent | 'line'
+  accent?: Tone
   size?: 'sm' | 'md'
+  glow?: boolean
 }
 
-/** Card em forma de "bloco": borda pixelada em degraus, sem cantos arredondados. */
-export function PixelBlock({ accent = 'line', size = 'md', className, ...rest }: Props) {
-  return <div className={cn('pixel-block', size === 'sm' && 'pixel-block-sm', edge[accent], className)} {...rest} />
+/** Painel de telemetria: fundo levemente mais claro que a página, borda de 1px tingida. */
+export function PixelBlock({ accent = 'line', size = 'md', glow = false, className, ...rest }: Props) {
+  return <div className={cn('pixel-block', size === 'sm' && 'pixel-block-sm', glow && 'pixel-block-glow', accentEdge[accent], className)} {...rest} />
 }
