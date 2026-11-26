@@ -62,6 +62,14 @@ de preparo e scripts de dev na ordem certa, com um clique.
     <td align="center"><sub><b>Repositórios</b> · clone, pull e importação de pastas</sub></td>
     <td align="center"><sub><b>Configurações</b> · IA, 2FA e aparência</sub></td>
   </tr>
+  <tr>
+    <td width="50%"><img src="docs/images/curral.png" alt="Curral: containers Docker com estado, portas, projeto compose e tropa dona, com reiniciar e parar"></td>
+    <td width="50%"><img src="docs/images/containers-da-tropa.png" alt="Aba Containers da tropa: serviços de cada docker compose up com subir, parar e reiniciar"></td>
+  </tr>
+  <tr>
+    <td align="center"><sub><b>Curral</b> · containers da máquina e de qual tropa é cada um</sub></td>
+    <td align="center"><sub><b>Containers da tropa</b> · subir, parar e reiniciar serviço a serviço</sub></td>
+  </tr>
 </table>
 
 ### Cor de destaque e temas

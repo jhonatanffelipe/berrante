@@ -16,6 +16,9 @@ export async function runDevShots(win: BrowserWindow, dir: string, send: (c: Men
   const shot = async (name: string) => writeFile(join(dir, name), (await win.webContents.capturePage()).toPNG())
   const click = (text: string) =>
     js<boolean>(`(() => { const b = [...document.querySelectorAll('button')].find((el) => el.textContent?.trim().toLowerCase() === ${JSON.stringify(text.toLowerCase())}); b?.click(); return Boolean(b) })()`)
+  // Troca o primeiro <select> da tela pelo setter nativo (o React só vê o change assim).
+  const selectFirst = (value: string) =>
+    js(`(() => { const sel = document.querySelector('select'); if (!sel) return; Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value').set.call(sel, ${JSON.stringify(value)}); sel.dispatchEvent(new Event('change', { bubbles: true })) })()`)
   const projectIds = await js<string[]>(`window.berrante.invoke('projects:list').then((r) => r.ok ? r.data.map((p) => p.id) : [])`)
   const first = projectIds[0]
   if (!first) throw new Error('sem tropas de demonstração')
@@ -34,7 +37,7 @@ export async function runDevShots(win: BrowserWindow, dir: string, send: (c: Men
   send({ type: 'go', view: 'ports' })
   await wait(3500)
   // Filtro "Do Berrante": o print não mostra processos da máquina de quem gerou.
-  await js(`(() => { const sel = document.querySelector('select'); if (!sel) return; Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value').set.call(sel, 'berrante'); sel.dispatchEvent(new Event('change', { bubbles: true })) })()`)
+  await selectFirst('berrante')
   await wait(1500)
   await shot('04-contar-a-boiada.png')
 
@@ -60,6 +63,20 @@ export async function runDevShots(win: BrowserWindow, dir: string, send: (c: Men
   await wait(1200)
   await shot('12-tema-dracula-configuracoes.png')
   await click('azul')
+  await wait(800)
+
+  // Containers com a boiada de pé: a aba da tropa e o curral, filtrado nos de tropas (não mostra os da máquina).
+  send({ type: 'project', id: first })
+  await wait(800)
+  send({ type: 'tab', tab: 'containers' })
+  await wait(3500)
+  await shot('13-containers-da-tropa.png')
+  send({ type: 'tab', tab: 'boiada' })
+  send({ type: 'go', view: 'containers' })
+  await wait(2000)
+  await selectFirst('berrante')
+  await wait(3500)
+  await shot('14-curral.png')
 
   // Botão "Copiar": a escrita na área de transferência precisa ser permitida pelo processo principal.
   // Conferência pelo pbpaste/pbcopy (macOS): a leitura do clipboard pelo processo principal não é confiável aqui.
