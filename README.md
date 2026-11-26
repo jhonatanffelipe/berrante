@@ -59,27 +59,35 @@ de preparo e scripts de dev na ordem certa, com um clique.
 <table>
   <tr>
     <td width="50%"><img src="docs/images/plano-de-subida.png" alt="Workflow de subida: passos em ordem com nome, comando, pasta, env, segue ao terminar, abrir uma porta, iniciar ou responder (health) e reinício automático"></td>
-    <td width="50%"><img src="docs/images/contar-a-boiada.png" alt="Contar a boiada: portas abertas com PID, comando, pasta e tropa dona"></td>
+    <td width="50%"><img src="docs/images/mudar-porta.png" alt="Vistoria do pasto com a porta 13333 ocupada: o Mudar porta sugere a 13334, livre na máquina e em nenhuma tropa, e mostra as linhas do .env da API e do front que mudam"></td>
   </tr>
   <tr>
     <td align="center"><sub><b>Plano de subida</b> · passos, pasta, comando, env, healthcheck e reinício automático</sub></td>
-    <td align="center"><sub><b>Contar a boiada</b> · portas, PIDs e de qual tropa é cada uma</sub></td>
+    <td align="center"><sub><b>Mudar porta</b> · porta livre sugerida e as linhas do .env que mudam</sub></td>
   </tr>
   <tr>
-    <td width="50%"><img src="docs/images/repositorios.png" alt="Repositórios na máquina e no GitHub, com importação de várias pastas, Finder, Pull e Remover"></td>
-    <td width="50%"><img src="docs/images/configuracoes.png" alt="Configurações: pasta dos clones, IA, 2FA e aparência com cor de destaque"></td>
-  </tr>
-  <tr>
-    <td align="center"><sub><b>Repositórios</b> · clone, pull e importação de pastas</sub></td>
-    <td align="center"><sub><b>Configurações</b> · IA, 2FA e aparência</sub></td>
-  </tr>
-  <tr>
+    <td width="50%"><img src="docs/images/contar-a-boiada.png" alt="Contar a boiada: portas abertas com PID, comando, pasta e tropa dona"></td>
     <td width="50%"><img src="docs/images/curral.png" alt="Curral: containers Docker com estado, portas, projeto compose e tropa dona, com reiniciar e parar"></td>
-    <td width="50%"><img src="docs/images/containers-da-tropa.png" alt="Aba Containers da tropa: serviços de cada docker compose up com subir, parar e reiniciar"></td>
   </tr>
   <tr>
+    <td align="center"><sub><b>Contar a boiada</b> · portas, PIDs e de qual tropa é cada uma</sub></td>
     <td align="center"><sub><b>Curral</b> · containers da máquina e de qual tropa é cada um</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/images/containers-da-tropa.png" alt="Aba Containers da tropa: serviços de cada docker compose up com subir, parar e reiniciar"></td>
+    <td width="50%"><img src="docs/images/repositorios.png" alt="Repositórios na máquina e no GitHub, com importação de várias pastas, Finder, Pull e Remover"></td>
+  </tr>
+  <tr>
     <td align="center"><sub><b>Containers da tropa</b> · subir, parar e reiniciar serviço a serviço</sub></td>
+    <td align="center"><sub><b>Repositórios</b> · clone, pull e importação de pastas</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/images/configuracoes.png" alt="Configurações: pasta dos clones, IA, 2FA e aparência com cor de destaque"></td>
+    <td width="50%"></td>
+  </tr>
+  <tr>
+    <td align="center"><sub><b>Configurações</b> · IA, 2FA e aparência</sub></td>
+    <td></td>
   </tr>
 </table>
 

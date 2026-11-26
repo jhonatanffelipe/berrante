@@ -22,6 +22,17 @@ const fixtures = join(root, 'tests/fixtures/repos')
 const NETWORK = 'fazenda-demo-network'
 
 const PORTS = { api: 13333, web: 15173, db: 15433, smtp: 11025, mail: 18025, loki: 13101, grafana: 13001 }
+const ENV_VALUES = {
+  PORT: PORTS.api,
+  API_URL: `http://localhost:${PORTS.api}`,
+  WEB_URL: `http://localhost:${PORTS.web}`,
+  POSTGRES_HOST: 'localhost',
+  POSTGRES_PORT: PORTS.db,
+  SMTP_HOST: 'localhost',
+  SMTP_PORT: PORTS.smtp,
+  WEB_PORT: PORTS.web,
+  VITE_API_BASE_URL: `http://localhost:${PORTS.api}/api`
+}
 
 if (down) {
   // Só derruba o que existe: rodar de novo, sem nada de pé, não gera aviso nem erro.
@@ -60,8 +71,9 @@ for (const name of ['fazenda-api', 'fazenda-web', 'fazenda-logs']) {
   mkdirSync(join(dir, 'node_modules'), { recursive: true })
   for (const f of ['README.md', '.env.example']) if (existsSync(join(fixtures, name, f))) copyFileSync(join(fixtures, name, f), join(dir, f))
   // .env com todas as chaves do exemplo: o print não mostra o aviso de chave faltando.
+  // Portas e endereços com valores reais: o "Mudar porta" mostra a troca no .env da API e no do front.
   const keys = readFileSync(join(dir, '.env.example'), 'utf8').split('\n').filter((l) => /^[A-Z_]+=/.test(l)).map((l) => l.split('=')[0])
-  write(join(dir, '.env'), keys.map((k) => `${k}=demo`).join('\n') + '\n')
+  write(join(dir, '.env'), keys.map((k) => `${k}=${ENV_VALUES[k] ?? 'demo'}`).join('\n') + '\n')
 }
 
 const pkg = (name, scripts) => JSON.stringify({ name, private: true, scripts }, null, 2) + '\n'
@@ -155,7 +167,8 @@ const services = [
   step('fazenda-logs', 'fazenda-logs:compose', 'containers', 'docker compose up -d', 'exit'),
   step('fazenda-api', 'fazenda-api:compose', 'containers', 'docker compose up -d db mailpit', 'exit'),
   // A API mostra as opções novas: segue quando o /health responde e reinicia sozinha se cair.
-  step('fazenda-api', 'fazenda-api:script:dev', 'dev', 'yarn dev', 'health', { color: 'green', env: { PORT: String(PORTS.api) }, healthUrl: `http://localhost:${PORTS.api}/health`, autoRestart: true }),
+  // A porta da API vem do .env (PORT=13333), como o Berrante recomenda: o "Mudar porta" consegue trocar.
+  step('fazenda-api', 'fazenda-api:script:dev', 'dev', 'yarn dev', 'health', { color: 'green', healthUrl: `http://localhost:${PORTS.api}/health`, autoRestart: true }),
   step('fazenda-api', 'fazenda-api:script:worker:start', 'worker:start', 'yarn worker:start', 'start', { color: 'purple' }),
   step('fazenda-api', 'fazenda-api:script:start', 'start', 'yarn start', 'port', { color: 'orange', enabled: false }),
   step('fazenda-web', 'fazenda-web:script:dev', 'dev', 'yarn dev', 'port', { color: 'pink', env: { PORT: String(PORTS.web) } }),
@@ -187,10 +200,19 @@ write(join(data, 'projects.json'), JSON.stringify([project], null, 2))
 // Avisos do macOS desligados: a geração dos prints não dispara notificações em quem roda.
 write(join(data, 'settings.json'), JSON.stringify({ cloneRoot: repos, accent: 'azul', tintBackground: true, showGrid: true, notifications: false }, null, 2))
 
+// "Outro projeto" que ocupa a porta da API: o roteiro abre a vistoria com ele de pé e o encerra antes do play.
+write(join(out, 'outro-projeto/server.js'), `require('node:http').createServer((_q, r) => r.end('outro')).listen(${PORTS.api}, '127.0.0.1')\n`)
+
 console.log(`demo pronta em ${out}; gerando prints em ${shots}…`)
 execFileSync('yarn', ['dev'], {
   cwd: root,
   stdio: 'inherit',
-  env: { ...process.env, BERRANTE_USER_DATA: data, BERRANTE_SHOTS: shots, BERRANTE_SHOTS_PLAY_MS: process.env.BERRANTE_SHOTS_PLAY_MS ?? '25000' }
+  env: {
+    ...process.env,
+    BERRANTE_USER_DATA: data,
+    BERRANTE_SHOTS: shots,
+    BERRANTE_SHOTS_PLAY_MS: process.env.BERRANTE_SHOTS_PLAY_MS ?? '25000',
+    BERRANTE_SHOTS_BLOCKER: join(out, 'outro-projeto/server.js')
+  }
 })
 console.log(`prints em ${shots}`)

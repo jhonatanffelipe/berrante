@@ -1,5 +1,5 @@
 import { app, type BrowserWindow } from 'electron'
-import { execFileSync } from 'node:child_process'
+import { execFileSync, spawn } from 'node:child_process'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { MenuCommand } from '@shared/menu'
@@ -19,6 +19,9 @@ export async function runDevShots(win: BrowserWindow, dir: string, send: (c: Men
   // Troca o primeiro <select> da tela pelo setter nativo (o React só vê o change assim).
   const selectFirst = (value: string) =>
     js(`(() => { const sel = document.querySelector('select'); if (!sel) return; Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value').set.call(sel, ${JSON.stringify(value)}); sel.dispatchEvent(new Event('change', { bubbles: true })) })()`)
+  // Clica no botão cujo texto contém `text` (botões com ícone na frente, como "⌕ Conferir porteiras").
+  const clickContaining = (text: string) =>
+    js<boolean>(`(() => { const b = [...document.querySelectorAll('button')].find((el) => el.textContent?.toLowerCase().includes(${JSON.stringify(text.toLowerCase())})); b?.click(); return Boolean(b) })()`)
   const projectIds = await js<string[]>(`window.berrante.invoke('projects:list').then((r) => r.ok ? r.data.map((p) => p.id) : [])`)
   const first = projectIds[0]
   if (!first) throw new Error('sem tropas de demonstração')
@@ -26,6 +29,21 @@ export async function runDevShots(win: BrowserWindow, dir: string, send: (c: Men
   send({ type: 'project', id: first })
   await wait(1500)
   await shot('01-tropa-parada.png')
+
+  // Vistoria com porta ocupada por um processo de fora (BERRANTE_SHOTS_BLOCKER) e o painel "Mudar porta" aberto.
+  const blockerScript = process.env.BERRANTE_SHOTS_BLOCKER
+  if (blockerScript) {
+    const blocker = spawn(process.env.BERRANTE_SHOTS_NODE ?? 'node', [blockerScript], { stdio: 'ignore' })
+    await wait(1500)
+    await clickContaining('conferir porteiras')
+    await wait(3500)
+    await clickContaining('mudar porta')
+    await wait(4000)
+    await shot('15-mudar-porta.png')
+    await js(`document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))`)
+    blocker.kill()
+    await wait(1500)
+  }
   send({ type: 'play' })
   await wait(Number(process.env.BERRANTE_SHOTS_PLAY_MS ?? 40000))
   await shot('02-tropa-boiada.png')
