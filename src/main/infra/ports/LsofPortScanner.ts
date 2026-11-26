@@ -2,10 +2,7 @@ import type { PortBinding } from '@shared/types'
 import type { CommandRunner, PortScannerGateway, ProcessInfo } from '@main/domain/ports'
 import { parseLsofCwd, parseLsofListen, parsePs } from './lsofParser'
 
-/**
- * macOS/Linux: `lsof -iTCP -sTCP:LISTEN -n -P` + `ps`. (No Linux, `ss -ltnp` pode substituir;
- * no Windows/WSL o mesmo adapter roda dentro da distro via WslCommandRunner.)
- */
+/** macOS/Linux: `lsof -iTCP -sTCP:LISTEN -n -P` + `ps` (no Linux, `ss -ltnp` pode substituir). */
 export class LsofPortScanner implements PortScannerGateway {
   constructor(private readonly runner: CommandRunner) {}
 

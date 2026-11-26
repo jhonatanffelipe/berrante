@@ -1,3 +1,5 @@
+import { homedir } from 'node:os'
+import { join } from 'node:path'
 import type { AiCliName } from '@shared/types'
 import type { AiCliGateway, CommandRunner } from '@main/domain/ports'
 import { AppError } from '@main/domain/errors/AppError'
@@ -39,27 +41,25 @@ export function unwrapCliOutput(stdout: string): unknown {
 export class AiCliAdapter implements AiCliGateway {
   constructor(
     private readonly runner: CommandRunner,
-    /** `~/.local/bin` no sistema onde os comandos rodam (no Windows, dentro da WSL). */
-    private readonly binDir: () => Promise<string>
+    private readonly binDir = join(homedir(), '.local', 'bin')
   ) {}
 
-  async path(cli: AiCliName): Promise<string> {
-    return `${await this.binDir()}/${cli}`
+  path(cli: AiCliName): string {
+    return join(this.binDir, cli)
   }
 
   async available(cli: AiCliName): Promise<boolean> {
-    return (await this.runner.which(await this.path(cli))) !== null
+    return (await this.runner.which(this.path(cli))) !== null
   }
 
   async requestJson(cli: AiCliName, prompt: string, schema: object, cwd: string): Promise<unknown> {
-    const path = await this.path(cli)
-    if (!(await this.available(cli))) throw new AppError('AI', `CLI "${cli}" não encontrada em ${path}`)
+    if (!(await this.available(cli))) throw new AppError('AI', `CLI "${cli}" não encontrada em ${this.path(cli)}`)
     const schemaJson = JSON.stringify(schema)
     const args =
       cli === 'claude'
         ? ['-p', '--output-format', 'json', '--json-schema', schemaJson, '--tools', 'Read,Glob,Grep', '--no-session-persistence', prompt]
         : ['-p', '--output-format', 'json', '--json-schema', schemaJson, '--mode', 'plan', prompt]
-    const { stdout, stderr, code } = await this.runner.run(path, args, { cwd, timeoutMs: TIMEOUT_MS })
+    const { stdout, stderr, code } = await this.runner.run(this.path(cli), args, { cwd, timeoutMs: TIMEOUT_MS })
     if (code !== 0 && !stdout.trim()) throw new AppError('AI', `A CLI ${cli} falhou`, { output: stderr.slice(0, 2000) })
     return unwrapCliOutput(stdout)
   }

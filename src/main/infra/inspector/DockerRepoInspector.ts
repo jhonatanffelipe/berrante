@@ -1,17 +1,13 @@
 import type { ComposeInfo } from '@shared/types'
-import type { CommandRunner, RepoFiles, RepoInspectorGateway, Workspace } from '@main/domain/ports'
+import type { CommandRunner, RepoFiles, RepoInspectorGateway } from '@main/domain/ports'
 import { parseComposeJson } from '@main/application/startup/detectors/composeParser'
 import { FsRepoFiles } from './FsRepoFiles'
 
 export class DockerRepoInspector implements RepoInspectorGateway {
-  constructor(
-    private readonly runner: CommandRunner,
-    private readonly workspace: Workspace
-  ) {}
+  constructor(private readonly runner: CommandRunner) {}
 
-  /** Leitura direta pelo caminho do host (no Windows, `\\wsl.localhost\<distro>\…`). */
   files(repoPath: string): RepoFiles {
-    return new FsRepoFiles(this.workspace.toHost(repoPath))
+    return new FsRepoFiles(repoPath)
   }
 
   /** `docker compose config` só lê e interpola; `--profile *` inclui serviços de todos os profiles. */

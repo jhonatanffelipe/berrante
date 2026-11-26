@@ -14,7 +14,6 @@ import { useToast } from '../../components/ui/Toast'
 import { useAppData } from '../layout/AppData'
 import { PageTitle } from '../../components/ui/PageTitle'
 import { useTotp } from '../security/TotpProvider'
-import { WslSection } from './WslSection'
 
 function Section({ title, children, accent = 'line' as const }: { title: string; children: React.ReactNode; accent?: 'line' | 'purple' | 'yellow' | 'red' | 'cyan' | 'accent' }) {
   return (
@@ -157,7 +156,6 @@ export function SettingsPage() {
   const withTotp = useTotp()
   const totp = useAsync(() => call('security:totpStatus'), [])
   const ai = useAsync<AiCliStatus[]>(() => call('settings:aiStatus'), [])
-  const wsl = useAsync(() => call('settings:wslStatus'), [])
 
   if (!settings) return null
   const preset = isPresetTheme(settings.accent)
@@ -182,22 +180,6 @@ export function SettingsPage() {
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <PageTitle index="C" title="Configurações" />
-
-      {wsl.data?.supported ? (
-        <Section title="WSL (Windows)" accent="cyan">
-          <WslSection
-            status={wsl.data}
-            loading={wsl.loading}
-            settings={settings}
-            onRefresh={() => void wsl.reload()}
-            onDistro={async (wslDistro) => {
-              await patch({ wslDistro })
-              void wsl.reload()
-              void ai.reload()
-            }}
-          />
-        </Section>
-      ) : null}
 
       <Section title="Pasta raiz dos clones">
         <div className="flex items-center gap-3">

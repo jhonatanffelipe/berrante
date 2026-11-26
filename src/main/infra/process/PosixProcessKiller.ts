@@ -35,7 +35,7 @@ export async function terminate(target: number, timeoutMs: number): Promise<void
 }
 
 export class PosixProcessKiller implements ProcessKiller {
-  async isAlive(pid: number): Promise<boolean> {
+  isAlive(pid: number): boolean {
     return isAlive(pid)
   }
   kill(pid: number, timeoutMs: number): Promise<void> {

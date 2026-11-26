@@ -25,7 +25,7 @@ Baixe o instalador na página da versão em
 > **Situação por sistema nesta versão (0.1.0):** o **macOS** é o alvo principal e tem tudo funcionando. No
 > **Linux** o app usa as mesmas ferramentas (`lsof`, `ps`, shell de login) e deve funcionar igual, mas ainda foi
 > pouco testado. No **Windows** o app instala, abre, faz login no GitHub, clona repositórios e detecta o plano,
-> mas **ainda não sobe serviços nem lista portas**: isso depende do suporte à WSL, que está no roteiro.
+> mas **ainda não sobe serviços nem lista portas**.
 
 ---
 

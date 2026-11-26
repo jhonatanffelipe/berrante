@@ -6,7 +6,7 @@ const DELIMITER = '__BERRANTE_ENV__'
 /**
  * Apps GUI no macOS herdam um PATH mínimo (sem nvm, homebrew, ~/.local/bin).
  * Resolve uma vez o ambiente do shell de login do usuário e usa em todo spawn.
- * Em Linux é o mesmo fluxo; no Windows (WSL) a resolução acontece dentro da distro.
+ * Em Linux é o mesmo fluxo.
  */
 export class ShellEnv {
   private env: Record<string, string> | null = null

@@ -4,19 +4,6 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 [SemVer](https://semver.org/lang/pt-BR/). Enquanto estiver em `0.x`, versões menores podem mudar o formato dos
 dados; quando isso acontecer, a nota da versão avisa.
 
-## [Não lançado]
-
-### Adicionado
-- **Windows com WSL:** repositórios, git, docker, serviços, portas e encerramento de processos rodam dentro de uma
-  distro WSL. Os caminhos são traduzidos para o Explorer (`\\wsl.localhost\<distro>\…`), as variáveis passam pelo
-  `WSLENV` e cada serviço sobe num grupo de processos próprio (`setsid`), inclusive com "Manter rodando".
-- **Configurações → WSL (Windows):** escolha da distro, pasta pessoal e conferência das ferramentas na distro
-  (git, docker, lsof, ps, setsid), com a dica de instalação do que faltar.
-
-### Alterado
-- Adapters de sistema reunidos numa fábrica de plataforma (`createPlatform`); `ProcessManager` passa a usar um
-  `ProcessHost` (nativo ou WSL).
-
 ## [0.1.0] — 2026-11-25
 
 Primeira versão pública.
@@ -43,6 +30,6 @@ Primeira versão pública.
   escolha da pasta e de "só para mim" ou "todos os usuários") e Linux (`.deb` e AppImage, x64 e ARM64).
 
 ### Limitações conhecidas
-- **Windows:** instala e abre, mas ainda não sobe serviços nem lista portas (depende do suporte à WSL).
+- **Windows:** instala e abre, mas ainda não sobe serviços nem lista portas.
 - **Linux:** pouco testado.
 - Apps não assinados: o Gatekeeper do macOS e o SmartScreen do Windows pedem confirmação na primeira abertura.

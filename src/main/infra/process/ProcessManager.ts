@@ -1,12 +1,13 @@
-import type { ChildProcess } from 'node:child_process'
+import { spawn, type ChildProcess } from 'node:child_process'
 import { closeSync, openSync } from 'node:fs'
 import { mkdir, stat } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { ProcessExit, ProcessHandle, ProcessManagerGateway, SpawnRequest, Logger } from '@main/domain/ports'
 import { AppError } from '@main/domain/errors/AppError'
+import type { ShellEnv } from '../platform/ShellEnv'
 import { FileTail } from './FileTail'
 import { LogRing } from './LogRing'
-import type { ProcessHost } from './ProcessHost'
+import { isAlive, terminate } from './PosixProcessKiller'
 
 interface Entry {
   handle: ProcessHandle | null
@@ -22,10 +23,8 @@ interface Entry {
 const safeName = (id: string) => id.replace(/[^\w.-]+/g, '_').slice(0, 120)
 
 /**
- * Sobe cada serviço num grupo de processos próprio (via ProcessHost: direto no macOS/Linux, dentro da WSL no
- * Windows) com saída redirecionada para arquivo, para que possa sobreviver ao fechamento do app ("manter a boiada").
- * Um serviço está vivo enquanto tem handle: o handle some quando o processo sai (evento do filho ou, para
- * processos re-adotados, polling do grupo).
+ * Spawna cada serviço com `detached: true` (novo process group, pgid = pid) e saída redirecionada
+ * para arquivo, para que os processos possam sobreviver ao fechamento do app ("manter a boiada").
  */
 export class ProcessManager implements ProcessManagerGateway {
   private entries = new Map<string, Entry>()
@@ -34,7 +33,7 @@ export class ProcessManager implements ProcessManagerGateway {
 
   constructor(
     private readonly logsDir: string,
-    private readonly host: ProcessHost,
+    private readonly shellEnv: ShellEnv,
     private readonly logger: Logger
   ) {}
 
@@ -69,11 +68,12 @@ export class ProcessManager implements ProcessManagerGateway {
   }
 
   isAlive(serviceId: string): boolean {
-    return Boolean(this.entries.get(serviceId)?.handle)
+    const h = this.entries.get(serviceId)?.handle
+    return Boolean(h && isAlive(-h.pgid))
   }
 
   handles(): ProcessHandle[] {
-    return [...this.entries.values()].map((e) => e.handle).filter((h): h is ProcessHandle => h !== null)
+    return [...this.entries.values()].map((e) => e.handle).filter((h): h is ProcessHandle => h !== null && isAlive(-h.pgid))
   }
 
   async spawn(req: SpawnRequest): Promise<ProcessHandle> {
@@ -81,23 +81,22 @@ export class ProcessManager implements ProcessManagerGateway {
     await mkdir(this.logsDir, { recursive: true })
     const logFile = join(this.logsDir, `${safeName(req.serviceId)}.log`)
     const fd = openSync(logFile, 'w', 0o600)
-    const env = { FORCE_COLOR: '1', CLICOLOR_FORCE: '1', ...req.env }
+    const env = { ...(await this.shellEnv.resolve()), FORCE_COLOR: '1', CLICOLOR_FORCE: '1', ...req.env }
 
-    let spawned: Awaited<ReturnType<ProcessHost['spawn']>>
+    let child: ChildProcess
     try {
-      spawned = await this.host.spawn(req.command, req.cwd, env, fd)
+      child = spawn(this.shellEnv.shell, ['-c', req.command], { cwd: req.cwd, env, detached: true, stdio: ['ignore', fd, fd] })
     } finally {
       closeSync(fd)
     }
-    const { child, pid, pgid } = spawned
-    child.unref()
-    // Captura a saída já agora: no Windows o host leva um tempo lendo o PGID e o processo pode ter saído antes.
-    const exited = new Promise<{ code: number | null; signal: NodeJS.Signals | null }>((resolve) => {
-      if (child.exitCode !== null || child.signalCode !== null) resolve({ code: child.exitCode, signal: child.signalCode })
-      else child.once('exit', (code, signal) => resolve({ code, signal }))
+    await new Promise<void>((resolve, reject) => {
+      child.once('spawn', resolve)
+      child.once('error', (err) => reject(new AppError('PROCESS', `Falha ao iniciar: ${err.message}`)))
     })
+    child.unref()
 
-    const handle: ProcessHandle = { serviceId: req.serviceId, projectId: req.projectId, pid, pgid, startedAt: new Date().toISOString(), logFile }
+    const pid = child.pid!
+    const handle: ProcessHandle = { serviceId: req.serviceId, projectId: req.projectId, pid, pgid: pid, startedAt: new Date().toISOString(), logFile }
     const e = this.entry(req.serviceId)
     e.handle = handle
     e.child = child
@@ -105,7 +104,9 @@ export class ProcessManager implements ProcessManagerGateway {
     e.finishing = null
     e.tail = new FileTail(logFile, (data) => this.appendLog(req.serviceId, data))
     await e.tail.start()
-    e.exit = exited.then(({ code, signal }) => this.finish(req.serviceId, code, signal))
+    e.exit = new Promise<ProcessExit>((resolve) => {
+      child.once('exit', (code, signal) => void this.finish(req.serviceId, code, signal).then(resolve))
+    })
     this.logger.info('process.spawned', { serviceId: req.serviceId, pid, cwd: req.cwd })
     return handle
   }
@@ -124,7 +125,7 @@ export class ProcessManager implements ProcessManagerGateway {
     e.watcher = null
     const pgid = e.handle?.pgid
     // O shell pode morrer e deixar filhos no grupo: limpa o grupo inteiro.
-    if (pgid && (await this.host.isGroupAlive(pgid).catch(() => false))) await this.host.terminateGroup(pgid, 2000).catch(() => undefined)
+    if (pgid && isAlive(-pgid)) await terminate(-pgid, 2000).catch(() => undefined)
     e.handle = null
     e.child = null
     const exit: ProcessExit = { serviceId, code, signal: e.stopping && !signal ? 'SIGTERM' : signal }
@@ -143,7 +144,7 @@ export class ProcessManager implements ProcessManagerGateway {
     const e = this.entries.get(serviceId)
     if (!e?.handle) return
     e.stopping = true
-    await this.host.terminateGroup(e.handle.pgid, timeoutMs)
+    await terminate(-e.handle.pgid, timeoutMs)
     if (!e.child && e.handle) await this.finish(serviceId, null, 'SIGTERM')
     else await e.exit
   }
@@ -152,7 +153,7 @@ export class ProcessManager implements ProcessManagerGateway {
   async adopt(handles: ProcessHandle[]): Promise<ProcessHandle[]> {
     const adopted: ProcessHandle[] = []
     for (const h of handles) {
-      if (!(await this.host.isGroupAlive(h.pgid).catch(() => false))) continue
+      if (!isAlive(-h.pgid)) continue
       const e = this.entry(h.serviceId)
       e.handle = h
       e.stopping = false
@@ -161,18 +162,9 @@ export class ProcessManager implements ProcessManagerGateway {
       e.tail = new FileTail(h.logFile, (data) => this.appendLog(h.serviceId, data))
       await e.tail.start(Math.max(0, size - 64 * 1024)).catch(() => (e.tail = null))
       e.exit = new Promise((resolve) => {
-        let checking = false
         e.watcher = setInterval(() => {
-          if (checking) return
-          checking = true
-          void this.host
-            .isGroupAlive(h.pgid)
-            .catch(() => true)
-            .then((alive) => {
-              checking = false
-              if (!alive) void this.finish(h.serviceId, null, null).then(resolve)
-            })
-        }, 2000)
+          if (!isAlive(-h.pgid)) void this.finish(h.serviceId, null, null).then(resolve)
+        }, 1000)
       })
       adopted.push(h)
     }

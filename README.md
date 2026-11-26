@@ -110,7 +110,7 @@ da instalação à primeira tropa de pé, está no **[guia de instalação](docs
 
 > **Situação nesta versão:** o **macOS** é o alvo principal e tem tudo funcionando. O **Linux** usa as mesmas
 > ferramentas e deve funcionar igual, mas foi pouco testado. No **Windows** o app instala, abre, faz login, clona e
-> detecta o plano, mas ainda **não sobe serviços nem lista portas**: isso vem com o suporte à WSL.
+> detecta o plano, mas ainda **não sobe serviços nem lista portas**.
 
 ## ⌨️ Atalhos
 

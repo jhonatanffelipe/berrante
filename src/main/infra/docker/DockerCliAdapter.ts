@@ -1,6 +1,8 @@
+import { spawn } from 'node:child_process'
 import type { ContainerState } from '@shared/types'
 import type { CommandRunner, DockerGateway } from '@main/domain/ports'
 import { AppError } from '@main/domain/errors/AppError'
+import type { ShellEnv } from '../platform/ShellEnv'
 
 interface PsRow {
   Service?: string
@@ -36,7 +38,10 @@ export function parseComposePs(output: string): Map<string, ContainerState> {
 }
 
 export class DockerCliAdapter implements DockerGateway {
-  constructor(private readonly runner: CommandRunner) {}
+  constructor(
+    private readonly runner: CommandRunner,
+    private readonly shellEnv: ShellEnv
+  ) {}
 
   private async compose(cwd: string, file: string, args: string[], timeoutMs = 120_000) {
     return this.runner.run('docker', ['compose', '-f', file, ...args], { cwd, timeoutMs })
@@ -48,9 +53,14 @@ export class DockerCliAdapter implements DockerGateway {
   }
 
   async composeUp(cwd: string, file: string, services: string[], onOutput: (data: string) => void): Promise<void> {
-    const code = await this.runner.stream('docker', ['compose', '-f', file, 'up', '-d', ...services], { cwd }, onOutput).done
-    if (code === null) throw new AppError('DOCKER', 'docker indisponível')
-    if (code !== 0) throw new AppError('DOCKER', `docker compose up saiu com código ${code}`)
+    const env = await this.shellEnv.resolve()
+    await new Promise<void>((resolve, reject) => {
+      const child = spawn('docker', ['compose', '-f', file, 'up', '-d', ...services], { cwd, env })
+      child.stdout.on('data', (d: Buffer) => onOutput(d.toString('utf8')))
+      child.stderr.on('data', (d: Buffer) => onOutput(d.toString('utf8')))
+      child.once('error', (err) => reject(new AppError('DOCKER', `docker indisponível: ${err.message}`)))
+      child.once('exit', (code) => (code === 0 ? resolve() : reject(new AppError('DOCKER', `docker compose up saiu com código ${code}`))))
+    })
   }
 
   async composeStop(cwd: string, file: string, services: string[]): Promise<void> {
@@ -69,13 +79,19 @@ export class DockerCliAdapter implements DockerGateway {
   }
 
   followLogs(cwd: string, file: string, service: string, onData: (data: string) => void): () => void {
-    const running = this.runner.stream(
-      'docker',
-      ['compose', '-f', file, 'logs', '-f', '--no-log-prefix', '--tail', '200', service],
-      { cwd, env: { FORCE_COLOR: '1' } },
-      onData
-    )
-    return () => running.kill()
+    let stopped = false
+    let child: ReturnType<typeof spawn> | null = null
+    void this.shellEnv.resolve().then((env) => {
+      if (stopped) return
+      child = spawn('docker', ['compose', '-f', file, 'logs', '-f', '--no-log-prefix', '--tail', '200', service], { cwd, env: { ...env, FORCE_COLOR: '1' } })
+      child.stdout?.on('data', (d: Buffer) => onData(d.toString('utf8')))
+      child.stderr?.on('data', (d: Buffer) => onData(d.toString('utf8')))
+      child.on('error', () => undefined)
+    })
+    return () => {
+      stopped = true
+      child?.kill('SIGTERM')
+    }
   }
 
   async networkExists(name: string): Promise<boolean> {

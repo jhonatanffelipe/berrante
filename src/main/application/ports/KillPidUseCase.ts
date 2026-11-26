@@ -20,7 +20,7 @@ export class KillPidUseCase {
   ) {}
 
   async execute(pid: number, totpCode?: string): Promise<void> {
-    if (!(await this.killer.isAlive(pid))) throw AppError.notFound('Processo')
+    if (!this.killer.isAlive(pid)) throw AppError.notFound('Processo')
     const table = await this.scanner.processTable()
     const pgid = table.get(pid)?.pgid
     const owned = this.runtime.managedProcesses().find((m) => m.pid === pid || m.pgid === pgid)

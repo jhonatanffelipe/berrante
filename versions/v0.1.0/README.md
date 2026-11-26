@@ -25,7 +25,7 @@ O passo a passo está no guia.
 
 > **Situação por sistema:** o **macOS** é o alvo principal e tem tudo funcionando. O **Linux** deve funcionar igual,
 > mas foi pouco testado. No **Windows** o app instala, abre, faz login, clona e detecta o plano, mas ainda **não sobe
-> serviços nem lista portas** (vem com o suporte à WSL).
+> serviços nem lista portas**.
 
 ### SHA-256
 

@@ -58,8 +58,7 @@ export const DEFAULT_SETTINGS = (): Settings => ({
   accent: 'azul',
   tintBackground: true,
   showGrid: true,
-  stopTimeoutMs: 5000,
-  wslDistro: null
+  stopTimeoutMs: 5000
 })
 
 export class JsonSettingsRepository implements SettingsRepository {

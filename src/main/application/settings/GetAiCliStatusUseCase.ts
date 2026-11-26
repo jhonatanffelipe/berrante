@@ -5,6 +5,6 @@ export class GetAiCliStatusUseCase {
   constructor(private readonly ai: AiCliGateway) {}
 
   async execute(): Promise<AiCliStatus[]> {
-    return Promise.all((['claude', 'agy'] as const).map(async (name) => ({ name, path: await this.ai.path(name), available: await this.ai.available(name) })))
+    return Promise.all((['claude', 'agy'] as const).map(async (name) => ({ name, path: this.ai.path(name), available: await this.ai.available(name) })))
   }
 }

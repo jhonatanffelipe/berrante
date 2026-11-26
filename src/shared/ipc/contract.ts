@@ -18,7 +18,6 @@ import type {
   Settings,
   StartResult,
   StartupPlan,
-  WslStatus,
   TotpSetup,
   TotpStatus,
   LogChunk,
@@ -81,7 +80,6 @@ export interface IpcOutputs {
   'settings:setAiEnabled': Settings
   'settings:pickCloneRoot': Settings
   'settings:aiStatus': AiCliStatus[]
-  'settings:wslStatus': WslStatus
 
   'security:totpStatus': TotpStatus
   'security:totpBeginSetup': TotpSetup

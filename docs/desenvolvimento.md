@@ -164,40 +164,16 @@ Em `~/Library/Application Support/Berrante/`: `projects.json`, `repositories.jso
 `yarn test` roda sobre fixtures em `tests/fixtures/repos`: README, `package.json` e compose de um projeto fictício
 (`fazenda-api`, `fazenda-web` e `fazenda-logs`), com `.env.example` só com chaves.
 
-## Plataformas
+## Roadmap multiplataforma
 
-Tudo que toca o sistema passa por ports do domínio (`CommandRunner`, `Workspace`, `ProcessKiller`,
-`PortScannerGateway`…) e por um `ProcessHost` na infra. A fábrica `infra/platform/createPlatform.ts` monta o conjunto
-certo para o sistema, e o `container.ts` só consome a `Platform`. Os use cases não sabem em qual sistema estão.
+O foco atual é o macOS. Tudo que toca o SO passa por ports (`CommandRunner`, `PortScannerGateway`,
+`ProcessManagerGateway`, `ProcessKiller`, `ShellEnv`), então outras plataformas são novos adapters no
+`container.ts`, sem mexer em use case:
 
-| | macOS / Linux | Windows (WSL) |
-|---|---|---|
-| Comandos (`CommandRunner`) | `NodeCommandRunner`: argv direto, PATH do shell de login | `WslCommandRunner`: `wsl.exe -d <distro> --cd <pasta> --exec /bin/sh -c RUN_SCRIPT berrante <arquivo> <args…>` |
-| Repositórios (`Workspace`) | o próprio disco | caminhos Linux da distro (`/home/…`); o Node lê por `\\wsl.localhost\<distro>\…` |
-| Serviços (`ProcessHost`) | `spawn(shell, ['-c', cmd], { detached })`, sinal para `-pgid` | `wsl.exe … setsid -w /bin/sh -c SERVICE_SCRIPT`, PGID lido de um arquivo temporário, `kill -s TERM -- -<pgid>` lá dentro |
-| Encerrar PID de fora | `process.kill` | `kill` dentro da distro |
-| Portas | `lsof` + `ps` | os mesmos, dentro da distro |
-
-Detalhes da WSL (`infra/platform/wsl/`):
-
-- **Sem injeção**: os scripts passados ao `sh -c` são constantes (`RUN_SCRIPT`, `SERVICE_SCRIPT`); arquivo, argumentos
-  e o comando do serviço seguem como argv posicional.
-- **Ambiente pelo `WSLENV`**: variáveis extras (token do git, `PORT` de um serviço…) vão no ambiente do `wsl.exe` e
-  são listadas no `WSLENV`, então atravessam sem aparecer na linha de comando. O PATH do login da distro (nvm, asdf,
-  `~/.local/bin`) vai como `BERRANTE_PATH`, para não colidir com o `Path` do Windows.
-- **Distro**: a escolhida em Configurações → WSL ou a padrão (`wsl.exe -l -v`, ignorando `docker-desktop`). Trocar
-  recarrega a distro e o ambiente de login sem reiniciar o app.
-- **Pasta de clones**: na primeira abertura no Windows, vira `~/www` dentro da distro.
-- **Diálogos e Explorer**: pastas escolhidas em `\\wsl.localhost\<distro>\…` viram caminho Linux; `C:\…` vira
-  `/mnt/c/…` (funciona, mas é lento para projetos Node). "Revelar" abre o caminho UNC no Explorer.
-- **Manter rodando**: o `wsl.exe` de cada serviço é `detached` e fica vivo enquanto o serviço roda (`setsid -w`),
-  então sobrevive ao fechamento do app e é re-adotado pelo PGID na próxima abertura.
-- **Limitações**: a aba de portas vê só a distro (processos nativos do Windows não aparecem) e a distro precisa ser
-  WSL 2 para o Docker Desktop e o encaminhamento de portas.
-
-`tests/unit/wslCore.test.ts` cobre argv, `WSLENV`, caminhos e a lista de distros. `tests/unit/wslAdapters.test.ts`
-roda os adapters de ponta a ponta no macOS/Linux com um `wsl.exe` falso (`tests/fixtures/wsl/fake-wsl.sh`), que imita
-o argv do real e só repassa as variáveis do `WSLENV`.
+- **Windows (instalador)**: o instalador NSIS (x64 e ARM64) já sai no `yarn dist`, com escolha de pasta e de "só
+  para mim" ou "todos os usuários". O app abre, faz login e clona; subir serviços e listar portas ainda não funciona.
+- **Linux (.deb e AppImage)**: já saem no `yarn dist` (x64 e ARM64). Funciona com o mesmo lsof/ps (ou um adapter
+  `ss -ltnp`); o `safeStorage` usa libsecret.
 
 ## Montar uma versão
 

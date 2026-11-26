@@ -2,7 +2,8 @@ import { app, safeStorage, type BrowserWindow } from 'electron'
 import { randomUUID } from 'node:crypto'
 import { join } from 'node:path'
 import type { Project } from '@shared/types'
-import { createPlatform } from './infra/platform/createPlatform'
+import { ShellEnv } from './infra/platform/ShellEnv'
+import { NodeCommandRunner } from './infra/platform/NodeCommandRunner'
 import { RedactingLogger } from './infra/logging/RedactingLogger'
 import {
   JsonLocalRepositoryRepository,
@@ -17,6 +18,7 @@ import { GhCliAdapter } from './infra/github/GhCliAdapter'
 import { GitCli } from './infra/github/GitCli'
 import { FsCloneScanner } from './infra/github/FsCloneScanner'
 import { ProcessManager } from './infra/process/ProcessManager'
+import { PosixProcessKiller } from './infra/process/PosixProcessKiller'
 import { DockerCliAdapter } from './infra/docker/DockerCliAdapter'
 import { LsofPortScanner } from './infra/ports/LsofPortScanner'
 import { AiCliAdapter } from './infra/ai/AiCliAdapter'
@@ -35,7 +37,6 @@ import { GetSettingsUseCase } from './application/settings/GetSettingsUseCase'
 import { UpdateSettingsUseCase } from './application/settings/UpdateSettingsUseCase'
 import { SetAiEnabledUseCase } from './application/settings/SetAiEnabledUseCase'
 import { GetAiCliStatusUseCase } from './application/settings/GetAiCliStatusUseCase'
-import { GetWslStatusUseCase } from './application/settings/GetWslStatusUseCase'
 import { GithubSession } from './application/auth/GithubSession'
 import { DeviceFlowState } from './application/auth/DeviceFlowState'
 import { GetAuthStatusUseCase } from './application/auth/GetAuthStatusUseCase'
@@ -83,29 +84,28 @@ export function buildContainer(getWindow: () => BrowserWindow | null) {
 
   // ---- infra
   const logger = new RedactingLogger(join(dataDir, 'logs', 'berrante.log'), !app.isPackaged)
-  const settings = new JsonSettingsRepository(dataDir)
-  // macOS/Linux direto; Windows dentro de uma distro WSL (runner, workspace, processos e kill).
-  const platform = createPlatform(dataDir, settings, logger)
-  const { runner, workspace } = platform
+  const shellEnv = new ShellEnv()
+  const runner = new NodeCommandRunner(shellEnv)
   const clock = { now: () => new Date() }
   const ids = { next: () => randomUUID() }
   const projects = new JsonProjectRepository(dataDir)
   const localRepos = new JsonLocalRepositoryRepository(dataDir)
+  const settings = new JsonSettingsRepository(dataDir)
   const runtimeState = new JsonRuntimeStateRepository(dataDir)
   const secrets = new SafeStorageSecretStore(join(dataDir, 'secrets.bin'), safeStorage)
   const totp = new OtplibTotp()
   const hasher = new NodeHasher()
   const github = new GithubHttpClient()
   const gh = new GhCliAdapter(runner)
-  const git = new GitCli(runner, () => platform.askpassDir())
-  const scanner = new FsCloneScanner(workspace)
-  const pm = new ProcessManager(join(dataDir, 'logs', 'services'), platform.processHost, logger)
-  const killer = platform.killer
-  const docker = new DockerCliAdapter(runner)
+  const git = new GitCli(runner, join(dataDir, 'bin', 'askpass.sh'))
+  const scanner = new FsCloneScanner()
+  const pm = new ProcessManager(join(dataDir, 'logs', 'services'), shellEnv, logger)
+  const killer = new PosixProcessKiller()
+  const docker = new DockerCliAdapter(runner, shellEnv)
   const ports = new LsofPortScanner(runner)
-  const ai = new AiCliAdapter(runner, () => platform.aiBinDir())
-  const inspector = new DockerRepoInspector(runner, workspace)
-  const shell = new ElectronShell(getWindow, workspace)
+  const ai = new AiCliAdapter(runner)
+  const inspector = new DockerRepoInspector(runner)
+  const shell = new ElectronShell(getWindow)
 
   // ---- serviços de aplicação
   const guard = new TotpGuard(secrets, totp, hasher, clock)
@@ -139,8 +139,6 @@ export function buildContainer(getWindow: () => BrowserWindow | null) {
     logger,
     runtime,
     pm,
-    /** Carrega a plataforma (no Windows: distro WSL e ambiente de login) antes do primeiro uso. */
-    initPlatform: () => platform.init(settings),
     useCases: {
       // auth
       authStatus: new GetAuthStatusUseCase(session, clientId, logger),
@@ -152,7 +150,7 @@ export function buildContainer(getWindow: () => BrowserWindow | null) {
       logout: new LogoutUseCase(session, catalog, deviceFlowAvailable, logger),
       // repos
       listGithubRepos: new ListGithubReposUseCase(session, catalog, localRepos, scanner, settings),
-      cloneRepo: new CloneRepoUseCase(session, catalog, git, localRepos, settings, ids, clock, logger, workspace),
+      cloneRepo: new CloneRepoUseCase(session, catalog, git, localRepos, settings, ids, clock, logger),
       pullRepo: new PullRepoUseCase(localRepos, git, session, logger),
       importFolder: new ImportLocalFolderUseCase(localRepos, git, shell, settings, ids, clock),
       listLocalRepos: new ListLocalReposUseCase(localRepos),
@@ -183,10 +181,9 @@ export function buildContainer(getWindow: () => BrowserWindow | null) {
       killPid: new KillPidUseCase(runtime, ports, killer, guard, projects, settings, logger),
       // configurações e segurança
       getSettings: new GetSettingsUseCase(settings),
-      updateSettings: new UpdateSettingsUseCase(settings, workspace, (next, previous) => platform.onSettingsChanged(next, previous)),
+      updateSettings: new UpdateSettingsUseCase(settings),
       setAiEnabled: new SetAiEnabledUseCase(settings, guard, logger),
       aiStatus: new GetAiCliStatusUseCase(ai),
-      wslStatus: new GetWslStatusUseCase(platform),
       pickCloneRoot: { execute: async () => shell.pickFolder('Pasta raiz dos clones', (await settings.get()).cloneRoot) },
       totpStatus: new GetTotpStatusUseCase(guard),
       totpBegin: new BeginTotpSetupUseCase(guard, totp, hasher, pendingTotp),
