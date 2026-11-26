@@ -8,3 +8,4 @@ config/.env
 coverage
 *.tsbuildinfo
 .demo
+berrante.code-workspace
