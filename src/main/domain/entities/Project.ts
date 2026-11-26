@@ -1,6 +1,9 @@
 import type { Project, ProjectInput, StartupPlan } from '@shared/types'
 import { AppError } from '../errors/AppError'
 
+/** Caminho absoluto de um `.code-workspace` (o arquivo em si é conferido no disco pelo EditorGateway). */
+export const isWorkspaceFile = (path: string): boolean => path.startsWith('/') && path.endsWith('.code-workspace')
+
 export const ProjectEntity = {
   create(input: ProjectInput, id: string, now: Date): Project {
     const iso = now.toISOString()
@@ -11,7 +14,8 @@ export const ProjectEntity = {
     const normalized = ProjectEntity.normalize(input)
     const removed = project.repositoryIds.filter((r) => !normalized.repositoryIds.includes(r))
     const plan = project.plan && removed.length > 0 ? StartupPlanOps.withoutRepos(project.plan, removed) : project.plan
-    return { ...project, ...normalized, plan, updatedAt: now.toISOString() }
+    const workspaceFile = input.workspaceFile === undefined ? (project.workspaceFile ?? null) : normalized.workspaceFile
+    return { ...project, ...normalized, workspaceFile, plan, updatedAt: now.toISOString() }
   },
 
   withPlan(project: Project, plan: StartupPlan, now: Date): Project {
@@ -23,7 +27,9 @@ export const ProjectEntity = {
   normalize(input: ProjectInput): ProjectInput {
     const name = input.name.trim()
     if (!name) throw AppError.validation('A tropa precisa de um nome')
-    return { ...input, name, repositoryIds: [...new Set(input.repositoryIds)] }
+    const workspaceFile = input.workspaceFile?.trim() || null
+    if (workspaceFile && !isWorkspaceFile(workspaceFile)) throw AppError.validation('O workspace precisa ser um arquivo .code-workspace')
+    return { ...input, name, repositoryIds: [...new Set(input.repositoryIds)], workspaceFile }
   }
 }
 

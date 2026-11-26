@@ -32,6 +32,8 @@ export function buildHandlers(uc: UseCases): Handlers {
     'projects:create': (i) => uc.createProject.execute(i),
     'projects:update': (i) => uc.updateProject.execute(i.id, i.input),
     'projects:delete': (i) => uc.deleteProject.execute(i.id),
+    'projects:pickWorkspace': (i) => uc.pickWorkspace.execute(i.defaultPath),
+    'projects:openWorkspace': (i) => uc.openWorkspace.execute(i.id),
 
     'startup:detect': (i) => uc.detectPlan.execute(i.projectId),
     'startup:savePlan': (i) => uc.savePlan.execute(i.projectId, i.plan),

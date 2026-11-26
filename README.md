@@ -34,6 +34,7 @@ de preparo e scripts de dev na ordem certa, com um clique.
   os processos que ficaram de pé.
 - **Curral:** todos os containers Docker da máquina, com a tropa dona de cada um; pare, suba ou reinicie de dentro
   do Berrante. Na tropa, a aba **Containers** mostra o que os passos `docker compose … up` sobem, serviço a serviço.
+- **VS Code a um clique:** cada tropa pode apontar para um `.code-workspace`; o botão **VS Code** (`⌘O`) abre ele.
 - **Contar a boiada:** todas as portas abertas da máquina, com PID, comando e de qual tropa é. Avisa antes de subir
   se alguma porta já estiver ocupada.
 - **GitHub integrado:** login pelo `gh` ou por código, lista, clone e pull, com o token guardado cifrado.
@@ -118,6 +119,7 @@ primeira tropa de pé, está no **[guia de instalação](docs/guia-instalacao.md
 | Atalho | Ação |
 |---|---|
 | `⌘N` | Nova tropa |
+| `⌘O` | Abrir o workspace da tropa no VS Code |
 | `⌘↩` | Tocar o berrante |
 | `⇧⌘↩` | Recolher a boiada |
 | `⌘1` … `⌘9` | Ir para a tropa N |

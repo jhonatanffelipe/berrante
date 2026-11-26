@@ -50,6 +50,7 @@ export function buildAppMenu(deps: AppMenuDeps, projects: Project[]): Menu {
       submenu: [
         { label: 'Nova tropa…', accelerator: 'Cmd+N', click: () => send({ type: 'newProject' }) },
         { label: 'Editar tropa…', accelerator: 'Cmd+E', click: () => send({ type: 'editProject' }) },
+        { label: 'Abrir no VS Code', accelerator: 'Cmd+O', click: () => send({ type: 'openWorkspace' }) },
         { type: 'separator' },
         { label: 'Tocar o berrante', accelerator: 'Cmd+Enter', click: () => send({ type: 'play' }) },
         { label: 'Recolher a boiada', accelerator: 'Cmd+Shift+Enter', click: () => send({ type: 'stop' }) },

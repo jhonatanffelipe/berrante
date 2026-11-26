@@ -25,6 +25,7 @@ import { LsofPortScanner } from './infra/ports/LsofPortScanner'
 import { AiCliAdapter } from './infra/ai/AiCliAdapter'
 import { DockerRepoInspector } from './infra/inspector/DockerRepoInspector'
 import { ElectronShell } from './infra/electron/ElectronShell'
+import { VsCodeEditor } from './infra/editor/VsCodeEditor'
 import { hostPorts } from './application/startup/detectors/composeParser'
 
 import { TotpGuard } from './application/security/TotpGuard'
@@ -60,6 +61,8 @@ import { GetProjectUseCase } from './application/projects/GetProjectUseCase'
 import { CreateProjectUseCase } from './application/projects/CreateProjectUseCase'
 import { UpdateProjectUseCase } from './application/projects/UpdateProjectUseCase'
 import { DeleteProjectUseCase } from './application/projects/DeleteProjectUseCase'
+import { PickWorkspaceFileUseCase } from './application/projects/PickWorkspaceFileUseCase'
+import { OpenProjectWorkspaceUseCase } from './application/projects/OpenProjectWorkspaceUseCase'
 import { PickStepFolderUseCase } from './application/startup/PickStepFolderUseCase'
 import { DetectStartupPlanUseCase } from './application/startup/DetectStartupPlanUseCase'
 import { SaveStartupPlanUseCase } from './application/startup/SaveStartupPlanUseCase'
@@ -112,6 +115,7 @@ export function buildContainer(getWindow: () => BrowserWindow | null) {
   const ai = new AiCliAdapter(runner)
   const inspector = new DockerRepoInspector(runner)
   const shell = new ElectronShell(getWindow)
+  const editor = new VsCodeEditor(runner)
 
   // ---- serviços de aplicação
   const guard = new TotpGuard(secrets, totp, hasher, clock)
@@ -172,9 +176,11 @@ export function buildContainer(getWindow: () => BrowserWindow | null) {
       // projetos
       listProjects: new ListProjectsUseCase(projects),
       getProject,
-      createProject: new CreateProjectUseCase(projects, localRepos, ids, clock),
-      updateProject: new UpdateProjectUseCase(projects, localRepos, clock),
+      createProject: new CreateProjectUseCase(projects, localRepos, ids, clock, editor),
+      updateProject: new UpdateProjectUseCase(projects, localRepos, clock, editor),
       deleteProject: new DeleteProjectUseCase(projects, runtime),
+      pickWorkspace: new PickWorkspaceFileUseCase(shell, settings),
+      openWorkspace: new OpenProjectWorkspaceUseCase(getProject, editor, logger),
       // startup
       detectPlan: detect,
       savePlan: new SaveStartupPlanUseCase(projects, localRepos, clock),

@@ -23,4 +23,11 @@ export class ElectronShell implements ShellGateway {
     const result = win ? await dialog.showOpenDialog(win, options) : await dialog.showOpenDialog(options)
     return result.canceled ? null : (result.filePaths[0] ?? null)
   }
+
+  async pickFile(title: string, filter: { name: string; extensions: string[] }, defaultPath?: string): Promise<string | null> {
+    const win = this.window()
+    const options: Electron.OpenDialogOptions = { title, defaultPath, filters: [filter], properties: ['openFile'] }
+    const result = win ? await dialog.showOpenDialog(win, options) : await dialog.showOpenDialog(options)
+    return result.canceled ? null : (result.filePaths[0] ?? null)
+  }
 }

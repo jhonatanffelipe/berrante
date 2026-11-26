@@ -4,6 +4,12 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 [SemVer](https://semver.org/lang/pt-BR/). Enquanto estiver em `0.x`, versões menores podem mudar o formato dos
 dados; quando isso acontecer, a nota da versão avisa.
 
+## [Não lançado]
+
+### Adicionado
+- **Workspace do VS Code na tropa:** escolha um `.code-workspace` em **Editar tropa** e abra pelo botão
+  **VS Code** no cabeçalho da tropa (ou `⌘O`). Abre pelo app do VS Code, sem precisar do comando `code` no PATH.
+
 ## [0.3.0] — 2026-11-26
 
 Controle dos containers Docker de dentro do Berrante.

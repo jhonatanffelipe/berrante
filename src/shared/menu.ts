@@ -4,6 +4,7 @@ export type MenuCommand =
   | { type: 'project'; id: string }
   | { type: 'newProject' }
   | { type: 'editProject' }
+  | { type: 'openWorkspace' }
   | { type: 'play' }
   | { type: 'stop' }
   | { type: 'tab'; tab: 'boiada' | 'containers' | 'plano' }

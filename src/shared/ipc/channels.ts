@@ -25,6 +25,8 @@ export const IPC_CHANNELS = [
   'projects:create',
   'projects:update',
   'projects:delete',
+  'projects:pickWorkspace',
+  'projects:openWorkspace',
   'startup:detect',
   'startup:savePlan',
   'startup:analyzeWithAi',

@@ -203,6 +203,15 @@ export interface ShellGateway {
   openExternal(url: string): Promise<void>
   reveal(path: string): void
   pickFolder(title: string, defaultPath?: string): Promise<string | null>
+  pickFile(title: string, filter: { name: string; extensions: string[] }, defaultPath?: string): Promise<string | null>
+}
+
+// ---------- Editor ----------
+
+/** VS Code: confere e abre arquivos `.code-workspace`. */
+export interface EditorGateway {
+  workspaceExists(path: string): Promise<boolean>
+  openWorkspace(path: string): Promise<void>
 }
 
 export type { ServiceStatus }

@@ -41,7 +41,8 @@ const projectInput = z.object({
   name: z.string().trim().min(1).max(60),
   color: accent,
   icon: z.enum(BLOCK_SHAPES),
-  repositoryIds: z.array(id).max(50)
+  repositoryIds: z.array(id).max(50),
+  workspaceFile: absolutePath.refine((p) => p.endsWith('.code-workspace'), 'O workspace precisa ser um arquivo .code-workspace').nullable().optional()
 })
 
 const none = z.undefined().optional()
@@ -87,6 +88,8 @@ export const ipcSchemas = {
   'projects:create': projectInput,
   'projects:update': z.object({ id, input: projectInput }),
   'projects:delete': z.object({ id }),
+  'projects:pickWorkspace': z.object({ defaultPath: absolutePath.optional() }),
+  'projects:openWorkspace': z.object({ id }),
 
   'startup:detect': z.object({ projectId: id }),
   'startup:savePlan': z.object({ projectId: id, plan: startupPlanSchema }),

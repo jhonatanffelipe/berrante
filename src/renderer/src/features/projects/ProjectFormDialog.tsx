@@ -17,7 +17,7 @@ interface Props {
   project: Project | null
 }
 
-/** Criar/editar tropa: nome, cor, ícone de bloco e repositórios. */
+/** Criar/editar tropa: nome, cor, ícone de bloco, repositórios e workspace do VS Code. */
 export function ProjectFormDialog({ open, onOpenChange, project }: Props) {
   const { repos, upsertProject, go } = useAppData()
   const toast = useToast()
@@ -25,6 +25,7 @@ export function ProjectFormDialog({ open, onOpenChange, project }: Props) {
   const [color, setColor] = useState<DraculaAccent>('purple')
   const [icon, setIcon] = useState<BlockShape>('tee')
   const [repoIds, setRepoIds] = useState<string[]>([])
+  const [workspaceFile, setWorkspaceFile] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
   useEffect(() => {
@@ -33,14 +34,24 @@ export function ProjectFormDialog({ open, onOpenChange, project }: Props) {
     setColor(project?.color ?? 'purple')
     setIcon(project?.icon ?? 'tee')
     setRepoIds(project?.repositoryIds ?? [])
+    setWorkspaceFile(project?.workspaceFile ?? null)
   }, [open, project])
 
   const toggle = (id: string) => setRepoIds((ids) => (ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]))
 
+  const pickWorkspace = async () => {
+    try {
+      const file = await call('projects:pickWorkspace', { defaultPath: workspaceFile ?? undefined })
+      if (file) setWorkspaceFile(file)
+    } catch (err) {
+      toast({ title: 'Não deu para escolher', body: errorMessage(err), accent: 'red' })
+    }
+  }
+
   const save = async () => {
     setBusy(true)
     try {
-      const input = { name, color, icon, repositoryIds: repoIds }
+      const input = { name, color, icon, repositoryIds: repoIds, workspaceFile }
       const saved = project ? await call('projects:update', { id: project.id, input }) : await call('projects:create', input)
       upsertProject(saved)
       onOpenChange(false)
@@ -89,6 +100,17 @@ export function ProjectFormDialog({ open, onOpenChange, project }: Props) {
                 </button>
               )
             })}
+          </div>
+        </Field>
+        <Field label="Workspace do VS Code" hint="Arquivo .code-workspace aberto pelo botão VS Code da tropa (⌘O).">
+          <div className="flex items-center gap-2">
+            <span className={cn('pixel-input flex-1 truncate font-mono text-xs', !workspaceFile && 'text-comment')} title={workspaceFile ?? ''}>
+              {workspaceFile ? shortPath(workspaceFile) : 'nenhum'}
+            </span>
+            <PixelButton onClick={() => void pickWorkspace()}>Escolher…</PixelButton>
+            {workspaceFile ? (
+              <PixelButton className="text-red" onClick={() => setWorkspaceFile(null)} aria-label="Remover workspace">✕</PixelButton>
+            ) : null}
           </div>
         </Field>
         <div className="flex justify-end gap-2">

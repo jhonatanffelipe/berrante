@@ -58,6 +58,8 @@ export interface IpcOutputs {
   'projects:create': Project
   'projects:update': Project
   'projects:delete': void
+  'projects:pickWorkspace': string | null
+  'projects:openWorkspace': void
 
   'startup:detect': DetectionResult
   'startup:savePlan': Project

@@ -6,7 +6,7 @@ import { isLongRunning, stepWaitFor } from '@shared/workflow'
 import { call, errorMessage } from '../../lib/api'
 import { useInterval } from '../../lib/useAsync'
 import { PixelButton } from '../../components/ui/PixelButton'
-import { Term } from '../../components/ui/Term'
+import { Term, Tip } from '../../components/ui/Term'
 import { StatusBlock } from '../../components/ui/StatusBlock'
 import { Tetromino } from '../../components/ui/Tetromino'
 import { Tabs, TabsContent, TabsList } from '../../components/ui/Tabs'
@@ -102,6 +102,14 @@ export function ProjectPanel({ project }: { project: Project }) {
     }
   }
 
+  const openWorkspace = async () => {
+    try {
+      await call('projects:openWorkspace', { id: project.id })
+    } catch (err) {
+      toast({ title: 'VS Code não abriu', body: errorMessage(err), accent: 'red' })
+    }
+  }
+
   const remove = async () => {
     try {
       await call('projects:delete', { id: project.id })
@@ -117,6 +125,10 @@ export function ProjectPanel({ project }: { project: Project }) {
     if (cmd.type === 'play' && !playing && project.plan) void play()
     else if (cmd.type === 'stop' && !stopping && anyActive) void stopAll()
     else if (cmd.type === 'editProject') setEditing(true)
+    else if (cmd.type === 'openWorkspace') {
+      if (project.workspaceFile) void openWorkspace()
+      else setEditing(true)
+    }
     else if (cmd.type === 'tab') setTab(cmd.tab)
   })
 
@@ -159,6 +171,13 @@ export function ProjectPanel({ project }: { project: Project }) {
             <PixelButton size="lg" className="text-red" disabled={stopping || !anyActive} onClick={() => void stopAll()}>
               ■ <Term tech="Stop all: para processos (SIGTERM → SIGKILL no grupo) e containers da tropa">Recolher</Term>
             </PixelButton>
+            {project.workspaceFile ? (
+              <Tip label={`Abrir ${project.workspaceFile.split('/').pop()} (⌘O)`}>
+                <PixelButton size="lg" onClick={() => void openWorkspace()} aria-label="Abrir no VS Code">
+                  {'</>'} VS Code
+                </PixelButton>
+              </Tip>
+            ) : null}
             <Menu.Root>
               <Menu.Trigger asChild>
                 <PixelButton size="lg" aria-label="Mais opções">⋮</PixelButton>

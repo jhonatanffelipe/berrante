@@ -8,6 +8,8 @@ export interface Project {
   color: DraculaAccent
   icon: BlockShape
   repositoryIds: string[]
+  /** Arquivo `.code-workspace` do VS Code aberto pelo botão da tropa (ausente em tropas antigas). */
+  workspaceFile?: string | null
   plan: StartupPlan | null
   createdAt: string
   updatedAt: string
@@ -18,6 +20,8 @@ export interface ProjectInput {
   color: DraculaAccent
   icon: BlockShape
   repositoryIds: string[]
+  /** `undefined` mantém o atual ao editar; `null` remove. */
+  workspaceFile?: string | null
 }
 
 export interface DetectionResult {
