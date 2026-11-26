@@ -4,7 +4,9 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 [SemVer](https://semver.org/lang/pt-BR/). Enquanto estiver em `0.x`, versões menores podem mudar o formato dos
 dados; quando isso acontecer, a nota da versão avisa.
 
-## [Não lançado]
+## [0.4.0] — 2026-11-26
+
+Abra o código da tropa no VS Code com um clique.
 
 ### Adicionado
 - **Workspace do VS Code na tropa:** escolha um `.code-workspace` em **Editar tropa** e abra pelo botão
