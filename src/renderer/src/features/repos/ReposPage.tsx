@@ -91,7 +91,7 @@ function GithubTab() {
         {loading ? <Spinner /> : null}
       </div>
       {error ? <p className="text-red">{error}</p> : null}
-      <div className="grid gap-3">
+      <div className="grid grid-cols-1 gap-3">
         {result?.items.map((r) => (
           <PixelBlock key={r.id} size="sm" accent={r.localPath ? 'green' : 'line'} className="flex items-center gap-4 px-4 py-3">
             <div className="min-w-0 flex-1">
@@ -167,7 +167,7 @@ function LocalTab() {
       {repos.length === 0 ? (
         <EmptyState title="Nenhum repositório local">Clone do GitHub ou importe uma pasta que já existe na sua máquina.</EmptyState>
       ) : (
-        <div className="grid gap-3">
+        <div className="grid grid-cols-1 gap-3">
           {repos.map((r) => (
             <PixelBlock key={r.id} size="sm" className="flex items-center gap-4 px-4 py-3">
               <div className="min-w-0 flex-1">

@@ -1,0 +1,29 @@
+# Versões do Berrante
+
+Cada pasta guarda as notas de uma versão. Os instaladores ficam anexados ao
+[GitHub Release](https://github.com/jhonatanffelipe/berrante/releases) correspondente, porque passam do limite de
+100 MB por arquivo do repositório.
+
+| Versão | Data | Plataformas | Notas |
+|---|---|---|---|
+| [v0.1.0](v0.1.0/README.md) | 2026-11-25 | macOS, Windows, Linux (arm64 e x64) | Primeira versão pública |
+
+## Montar uma versão nova
+
+```bash
+# 1. Suba "version" no package.json e escreva a entrada no CHANGELOG.md
+yarn test
+yarn dist                       # release/<versão>/: .dmg/.zip, .exe (NSIS) e .deb/.AppImage
+
+# 2. Escreva versions/vX.Y.Z/README.md (downloads, tamanhos e SHA-256)
+shasum -a 256 release/X.Y.Z/*.{dmg,zip,deb,AppImage} release/X.Y.Z/*-win-*.exe
+
+# 3. Commit, tag e release com os instaladores anexados
+git tag -a vX.Y.Z -m "Berrante vX.Y.Z"
+git push origin main vX.Y.Z
+gh release create vX.Y.Z --title "Berrante vX.Y.Z" --notes-file versions/vX.Y.Z/README.md \
+  release/X.Y.Z/*.{dmg,zip,deb,AppImage} release/X.Y.Z/*-win-*.exe
+```
+
+O `yarn dist` também gera um `Berrante-Setup-X.Y.Z-win.exe` com as duas arquiteturas juntas (o dobro do tamanho).
+Ele não vai para o release: os instaladores `-win-x64` e `-win-arm64` já cobrem tudo.

@@ -23,9 +23,9 @@ export function RepoCard({ project, repo, runtime, now, onAction }: Props) {
   return (
     <PixelBlock className="animate-block-drop overflow-hidden">
       <header className="flex items-center gap-4 border-b border-line/60 px-5 py-3">
-        <span className="label">{repo.name}</span>
-        <span className="truncate font-mono text-[11px] text-comment">{shortPath(repo.path)}</span>
-        <div className="ml-auto flex items-center gap-3">
+        <span className="label shrink-0 whitespace-nowrap">{repo.name}</span>
+        <span className="min-w-0 truncate font-mono text-[11px] text-comment">{shortPath(repo.path)}</span>
+        <div className="ml-auto flex shrink-0 items-center gap-3">
           <SegmentBar value={playable.length ? running / playable.length : 0} segments={Math.max(playable.length * 3, 6)} height={10} />
           <span className="font-mono text-xs font-bold text-fg">
             {running}/{playable.length} <span className="font-normal text-comment">de pé</span>

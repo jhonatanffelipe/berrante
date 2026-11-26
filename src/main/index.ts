@@ -7,6 +7,7 @@ import { buildContainer, type Container } from './container'
 import { registerIpc } from './ipc/registerIpc'
 import { buildHandlers } from './ipc/controllers'
 import { buildAppMenu, installAboutPanel } from './ui/appMenu'
+import { runDevShots } from './ui/devShots'
 import type { MenuCommand } from '@shared/menu'
 
 const DEV_URL = process.env.ELECTRON_RENDERER_URL
@@ -143,6 +144,8 @@ async function confirmQuit(c: Container): Promise<'keep' | 'stop' | 'cancel'> {
 }
 
 app.setName('Berrante')
+// Só em dev: pasta de dados alternativa (ex.: dados de demonstração para os prints do README).
+if (!app.isPackaged && process.env.BERRANTE_USER_DATA) app.setPath('userData', process.env.BERRANTE_USER_DATA)
 
 const gotLock = app.requestSingleInstanceLock()
 if (!gotLock) app.quit()
@@ -158,7 +161,8 @@ app.whenReady().then(async () => {
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
     callback({ responseHeaders: { ...details.responseHeaders, 'Content-Security-Policy': [CSP] } })
   })
-  session.defaultSession.setPermissionRequestHandler((_wc, _permission, callback) => callback(false))
+  // Nega tudo, exceto escrever na área de transferência (botões "Copiar"); ler continua bloqueado.
+  session.defaultSession.setPermissionRequestHandler((_wc, permission, callback) => callback(permission === 'clipboard-sanitized-write'))
 
   // Em dev o Electron mostra o ícone genérico no Dock: usa o do Berrante.
   if (!app.isPackaged && process.platform === 'darwin') app.dock?.setIcon(join(__dirname, '../../build/icon.png'))
@@ -185,6 +189,17 @@ app.whenReady().then(async () => {
 
   mainWindow = createWindow(await container.useCases.getSettings.execute())
   mainWindow.on('closed', () => (mainWindow = null))
+
+  const shotsDir = !app.isPackaged ? process.env.BERRANTE_SHOTS : undefined
+  if (shotsDir) {
+    const win = mainWindow
+    win.setSize(1440, 900)
+    win.webContents.once('did-finish-load', () => {
+      setTimeout(() => {
+        void runDevShots(win, shotsDir, sendMenuCommand, () => c.runtime.stopEverything()).catch((err) => c.logger.error('devShots.failed', { error: (err as Error).message }))
+      }, 3000)
+    })
+  }
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {

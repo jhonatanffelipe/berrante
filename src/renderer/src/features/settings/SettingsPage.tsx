@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { AiCliName, AiCliStatus, TotpSetup, TotpStatus } from '@shared/types'
-import { ACCENTS, ACCENT_NAMES } from '@shared/theme'
+import { ACCENTS, ACCENT_NAMES, isPresetTheme } from '@shared/theme'
 import { cn } from '../../lib/cn'
 import { call, errorMessage } from '../../lib/api'
 import { useAsync } from '../../lib/useAsync'
@@ -21,6 +21,27 @@ function Section({ title, children, accent = 'line' as const }: { title: string;
       <h3 className="label">{title}</h3>
       {children}
     </PixelBlock>
+  )
+}
+
+/** Amostra do Drácula: fundo, roxo, rosa, verde e ciano da paleta oficial. */
+const DRACULA_SWATCH = ['#282a36', '#bd93f9', '#ff79c6', '#50fa7b', '#8be9fd']
+
+function AccentChip({ active, label, colors, onClick }: { active: boolean; label: string; colors: string[]; onClick: () => void }) {
+  const glow = colors[colors.length > 1 ? 1 : 0]
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn('flex items-center gap-2 rounded border px-2.5 py-1.5 font-mono text-[11px] font-bold uppercase tracking-[0.12em]', active ? 'border-accent bg-accent/10 text-fg' : 'border-line text-comment hover:text-fg')}
+    >
+      <span className="flex overflow-hidden rounded-[2px]" style={{ boxShadow: active ? `0 0 10px ${glow}` : undefined }}>
+        {colors.map((c) => (
+          <span key={c} className={cn('h-3.5', colors.length > 1 ? 'w-1.5' : 'w-3.5')} style={{ background: c }} />
+        ))}
+      </span>
+      {label}
+    </button>
   )
 }
 
@@ -112,7 +133,16 @@ function TotpSection({ status, onChange }: { status: TotpStatus | null; onChange
           {codes?.map((c) => <span key={c}>{c}</span>)}
         </div>
         <div className="mt-4 flex justify-end gap-2">
-          <PixelButton onClick={() => void navigator.clipboard.writeText(codes?.join('\n') ?? '')}>Copiar</PixelButton>
+          <PixelButton
+            onClick={() =>
+              void navigator.clipboard
+                .writeText(codes?.join('\n') ?? '')
+                .then(() => toast({ title: 'Códigos copiados', body: 'Cole no seu gerenciador de senhas.', accent: 'green' }))
+                .catch((err: unknown) => toast({ title: 'Não copiou', body: errorMessage(err), accent: 'red' }))
+            }
+          >
+            Copiar
+          </PixelButton>
           <PixelButton accent="yellow" onClick={() => setCodes(null)}>Guardei</PixelButton>
         </div>
       </Dialog>
@@ -128,6 +158,7 @@ export function SettingsPage() {
   const ai = useAsync<AiCliStatus[]>(() => call('settings:aiStatus'), [])
 
   if (!settings) return null
+  const preset = isPresetTheme(settings.accent)
 
   const patch = async (p: Parameters<typeof call<'settings:update'>>[1]) => {
     try {
@@ -180,28 +211,24 @@ export function SettingsPage() {
       <TotpSection status={totp.data} onChange={(s) => { totp.setData(s); if (!s.enabled) void call('settings:get').then(setSettings) }} />
 
       <Section title="Aparência">
-        <Field label="Cor de destaque" hint="O fundo escuro é tingido com o tom da cor escolhida.">
+        <Field label="Cor de destaque" hint={preset ? 'Drácula usa a paleta oficial inteira: fundo, texto e cores de status.' : 'O fundo escuro é tingido com o tom da cor escolhida.'}>
+          <div className="flex flex-wrap items-center gap-2">
+            {ACCENT_NAMES.filter((n) => !isPresetTheme(n)).map((name) => (
+              <AccentChip key={name} active={settings.accent === name} label={ACCENTS[name].label} colors={[ACCENTS[name].hex]} onClick={() => void patch({ accent: name })} />
+            ))}
+          </div>
+        </Field>
+        <Field label="Temas prontos">
           <div className="flex flex-wrap gap-2">
-            {ACCENT_NAMES.map((name) => {
-              const active = settings.accent === name
-              return (
-                <button
-                  key={name}
-                  type="button"
-                  onClick={() => void patch({ accent: name })}
-                  className={cn('flex items-center gap-2 rounded border px-2.5 py-1.5 font-mono text-[11px] font-bold uppercase tracking-[0.12em]', active ? 'border-accent bg-accent/10 text-fg' : 'border-line text-comment hover:text-fg')}
-                >
-                  <span className="h-3.5 w-3.5 rounded-[2px]" style={{ background: ACCENTS[name].hex, boxShadow: active ? `0 0 10px ${ACCENTS[name].hex}` : undefined }} />
-                  {ACCENTS[name].label}
-                </button>
-              )
-            })}
+            {ACCENT_NAMES.filter(isPresetTheme).map((name) => (
+              <AccentChip key={name} active={settings.accent === name} label={ACCENTS[name].label} colors={DRACULA_SWATCH} onClick={() => void patch({ accent: name })} />
+            ))}
           </div>
         </Field>
         <div className="flex flex-wrap items-center gap-6">
-          <label className="flex items-center gap-3">
-            <Switch checked={settings.tintBackground} onCheckedChange={(v) => void patch({ tintBackground: v })} label="Tingir o fundo" />
-            Tingir o fundo com a cor de destaque <span className="text-comment">(desligado: preto e cinza neutros)</span>
+          <label className={cn('flex items-center gap-3', preset && 'opacity-50')}>
+            <Switch checked={settings.tintBackground && !preset} disabled={preset} onCheckedChange={(v) => void patch({ tintBackground: v })} label="Tingir o fundo" />
+            Tingir o fundo com a cor de destaque <span className="text-comment">{preset ? '(o tema pronto já define o fundo)' : '(desligado: preto e cinza neutros)'}</span>
           </label>
           <label className="flex items-center gap-3">
             <Switch checked={settings.showGrid} onCheckedChange={(v) => void patch({ showGrid: v })} label="Grid de fundo" />
