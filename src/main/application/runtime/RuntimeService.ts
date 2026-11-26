@@ -1,8 +1,8 @@
 import type { PortConflict, Project, ProjectRuntime, RunningProcess, ServiceDefinition, StartResult } from '@shared/types'
 import { actionServiceId, runtimeKey } from '@shared/runtime'
-import { composeStopCommand, isLongRunning, stepWaitFor } from '@shared/workflow'
+import { applyProfile, composeStopCommand, isLongRunning, stepWaitFor } from '@shared/workflow'
 import type { ProjectRepository, RuntimeStateRepository, SettingsRepository } from '@main/domain/repositories'
-import type { DockerGateway, Logger, PortScannerGateway, ProcessExit, ProcessManagerGateway } from '@main/domain/ports'
+import type { DockerGateway, HttpProbe, Logger, PortScannerGateway, ProcessExit, ProcessManagerGateway } from '@main/domain/ports'
 import { AppError } from '@main/domain/errors/AppError'
 import { RunningProcessEntity } from '@main/domain/entities/RunningProcess'
 import { playableServices } from '@main/domain/entities/ServiceDefinition'
@@ -13,6 +13,16 @@ const TAG = (text: string, color = 35) => `\r\n\x1b[${color}m▌ berrante\x1b[0m
 const POLL_MS = 2000
 const READY_TIMEOUT_MS = 120_000
 const SCRIPT_SETTLE_MS = 3000
+/** Reinício automático: no máximo N tentativas dentro da janela, com espera crescente. */
+const RESTART_MAX = 3
+const RESTART_WINDOW_MS = 5 * 60_000
+const RESTART_BACKOFF_MS = 2000
+
+/** Eventos para avisos do sistema e o ícone da barra de menu. */
+export type RuntimeEvent =
+  | { type: 'played'; projectId: string; projectName: string; summary: PlaySummary }
+  | { type: 'crashed'; projectId: string; projectName: string; serviceName: string; restarting: boolean }
+  | { type: 'gaveUp'; projectId: string; projectName: string; serviceName: string }
 
 /** Portas candidatas por serviço (compose publicado, env PORT, portas vistas antes). */
 export type PortHints = (project: Project) => Promise<Map<string, number[]>>
@@ -39,6 +49,7 @@ export class RuntimeService {
     private readonly settings: SettingsRepository,
     private readonly runtimeState: RuntimeStateRepository,
     private readonly portHints: PortHints,
+    private readonly http: HttpProbe,
     private readonly logger: Logger
   ) {}
 
@@ -120,14 +131,14 @@ export class RuntimeService {
 
   // ------------------------------------------------------------------ conflitos de porta
 
-  async conflicts(project: Project): Promise<PortConflict[]> {
+  async conflicts(project: Project, profileId?: string | null): Promise<PortConflict[]> {
     if (!project.plan) return []
     const hints = await this.portHints(project)
     const listening = await this.scanner.listListening()
     const table = await this.scanner.processTable()
     const ownPgids = new Set(this.managedProcesses().map((m) => m.pgid))
     const result: PortConflict[] = []
-    for (const svc of project.plan.services.filter((s) => s.enabled)) {
+    for (const svc of applyProfile(project.plan, profileId).services.filter((s) => s.enabled)) {
       if (RunningProcessEntity.isActive(this.get(project.id, svc.id).status)) continue
       const ports = new Set([...(hints.get(svc.id) ?? []), ...(this.seenPorts.get(this.key(project.id, svc.id)) ?? [])])
       for (const port of ports) {
@@ -143,11 +154,12 @@ export class RuntimeService {
 
   // ------------------------------------------------------------------ play / stop
 
-  async startAll(project: Project, ignoreConflicts = false): Promise<StartResult> {
+  async startAll(project: Project, ignoreConflicts = false, profileId?: string | null): Promise<StartResult> {
     if (!project.plan) throw new AppError('VALIDATION', 'Detecte e salve o plano de subida antes de tocar o berrante')
     if (this.playing.has(project.id)) throw new AppError('CONFLICT', 'O berrante já está tocando para essa tropa')
-    const conflicts = ignoreConflicts ? [] : await this.conflicts(project)
+    const conflicts = ignoreConflicts ? [] : await this.conflicts(project, profileId)
     if (conflicts.length) return { started: [], skipped: [], conflicts }
+    const plan = applyProfile(project.plan, profileId)
 
     this.projectCache.set(project.id, project)
     this.playing.add(project.id)
@@ -157,7 +169,7 @@ export class RuntimeService {
     const started0 = Date.now()
     try {
       // Workflow: um passo por vez, na ordem. Se um falha, os seguintes não rodam.
-      for (const svc of playableServices(project.plan)) {
+      for (const svc of playableServices(plan)) {
         if (halted) {
           skipped.push(svc.id)
           this.pm.appendLog(this.key(project.id, svc.id), TAG(`pulado: o passo "${halted.name}" falhou`, 31))
@@ -245,6 +257,27 @@ export class RuntimeService {
       }
       this.pm.appendLog(key, TAG('nenhuma porta aberta em 2 min; seguindo mesmo assim', 33))
       return this.pm.isAlive(key)
+    }
+
+    if (waitFor === 'health') {
+      const url = svc.healthUrl
+      if (!url) {
+        this.pm.appendLog(key, TAG('passo sem URL de healthcheck; seguindo ao iniciar', 33))
+      } else {
+        const deadline = Date.now() + READY_TIMEOUT_MS
+        while (Date.now() < deadline) {
+          if (!this.pm.isAlive(key)) return false
+          if (await this.http.ok(url)) {
+            this.set(project.id, svc.id, { status: 'running' })
+            this.emit(project.id)
+            this.pm.appendLog(key, TAG(`${url} respondeu; seguindo`, 32))
+            return true
+          }
+          await sleep(1000)
+        }
+        this.pm.appendLog(key, TAG(`${url} não respondeu em 2 min; seguindo mesmo assim`, 33))
+        return this.pm.isAlive(key)
+      }
     }
 
     await sleep(SCRIPT_SETTLE_MS)
@@ -374,6 +407,41 @@ export class RuntimeService {
     this.pm.appendLog(exit.serviceId, TAG(`processo terminou (${exit.code ?? exit.signal ?? '?'}) → ${status}`, color))
     await this.persist()
     this.emit(projectId)
+    // Só conta como "caiu" o que já estava de pé; falha na subida é tratada pelo workflow.
+    if (status === 'crashed' && current.status === 'running') await this.onCrash(projectId, serviceId)
+  }
+
+  private async onCrash(projectId: string, serviceId: string): Promise<void> {
+    const project = this.projectCache.get(projectId) ?? (await this.projects.findById(projectId))
+    const svc = project?.plan?.services.find((s) => s.id === serviceId)
+    if (!project || !svc) return
+    const key = this.key(projectId, serviceId)
+    const now = Date.now()
+    const recent = (this.restarts.get(key) ?? []).filter((t) => now - t < RESTART_WINDOW_MS)
+    const restarting = Boolean(svc.autoRestart) && svc.kind !== 'compose' && recent.length < RESTART_MAX
+    this.fire({ type: 'crashed', projectId, projectName: project.name, serviceName: svc.name, restarting })
+    if (!svc.autoRestart || svc.kind === 'compose') return
+    if (!restarting) {
+      this.pm.appendLog(key, TAG(`caiu ${RESTART_MAX} vezes em 5 min; desisti de reiniciar sozinho`, 31))
+      this.fire({ type: 'gaveUp', projectId, projectName: project.name, serviceName: svc.name })
+      return
+    }
+    recent.push(now)
+    this.restarts.set(key, recent)
+    const wait = RESTART_BACKOFF_MS * recent.length
+    this.pm.appendLog(key, TAG(`reiniciando sozinho em ${wait / 1000}s (tentativa ${recent.length}/${RESTART_MAX})`, 33))
+    await sleep(wait)
+    // Alguém parou ou subiu de novo enquanto esperava: não mexe.
+    if (this.get(projectId, serviceId).status !== 'crashed') return
+    try {
+      await this.startOne(project, svc)
+      void this.waitReady(project, svc)
+      this.logger.info('runtime.autoRestart', { projectId, serviceId, attempt: recent.length })
+    } catch (err) {
+      this.set(projectId, serviceId, { status: 'crashed' })
+      this.pm.appendLog(key, TAG(`erro ao reiniciar: ${(err as Error).message}`, 31))
+      this.emit(projectId)
+    }
   }
 
   private follow(projectId: string, svc: ServiceDefinition): void {

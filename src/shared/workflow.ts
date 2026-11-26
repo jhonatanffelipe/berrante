@@ -3,13 +3,33 @@ import type { ServiceDefinition, WaitFor } from './types'
 export const WAIT_FOR_LABEL: Record<WaitFor, string> = {
   exit: 'terminar',
   port: 'abrir uma porta',
-  start: 'iniciar'
+  start: 'iniciar',
+  health: 'responder (health)'
 }
 
 export const WAIT_FOR_HINT: Record<WaitFor, string> = {
   exit: 'Espera o comando acabar com sucesso (docker compose up -d, yarn install).',
   port: 'Espera o processo abrir uma porta TCP (yarn dev de API ou front).',
-  start: 'Espera alguns segundos com o processo vivo (worker, fila).'
+  start: 'Espera alguns segundos com o processo vivo (worker, fila).',
+  health: 'Espera uma URL local responder com sucesso (ex.: http://localhost:3000/health).'
+}
+
+/** Só endereços desta máquina: o healthcheck nunca sai para a rede. */
+export function isLocalHealthUrl(url: string): boolean {
+  try {
+    const u = new URL(url)
+    return (u.protocol === 'http:' || u.protocol === 'https:') && ['localhost', '127.0.0.1', '[::1]'].includes(u.hostname) && !u.username && !u.password
+  } catch {
+    return false
+  }
+}
+
+/** Plano com só os passos do perfil habilitados (perfil desconhecido ou ausente = plano inteiro). */
+export function applyProfile<P extends { services: { id: string; enabled: boolean }[]; profiles?: { id: string; serviceIds: string[] }[] }>(plan: P, profileId: string | null | undefined): P {
+  const profile = profileId ? plan.profiles?.find((p) => p.id === profileId) : undefined
+  if (!profile) return plan
+  const ids = new Set(profile.serviceIds)
+  return { ...plan, services: plan.services.map((s) => ({ ...s, enabled: s.enabled && ids.has(s.id) })) }
 }
 
 /** `waitFor` efetivo, inclusive para planos salvos antes do campo existir. */

@@ -34,7 +34,17 @@ export class SaveStartupPlanUseCase {
       return { ...svc, repoId: repo.id }
     })
 
-    const updated = ProjectEntity.withPlan(project, { ...plan, services: flattenWorkflow(services) }, this.clock.now())
+    // Perfis só apontam para passos que existem; nomes repetidos não fazem sentido no seletor.
+    const names = new Set<string>()
+    const profiles = (plan.profiles ?? []).map((p) => {
+      const name = p.name.trim()
+      if (names.has(name.toLowerCase())) throw AppError.validation(`Perfil duplicado: ${name}`)
+      names.add(name.toLowerCase())
+      return { ...p, name, serviceIds: p.serviceIds.filter((id) => ids.has(id)) }
+    })
+    const cleaned = services.map((s) => ({ ...s, healthUrl: s.waitFor === 'health' ? (s.healthUrl ?? null) : null }))
+    if (cleaned.some((s) => s.waitFor === 'health' && !s.healthUrl)) throw AppError.validation('Passo que segue ao responder precisa da URL de healthcheck')
+    const updated = ProjectEntity.withPlan(project, { ...plan, services: flattenWorkflow(cleaned), profiles }, this.clock.now())
     await this.projects.save(updated)
     return updated
   }

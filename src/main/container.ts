@@ -167,7 +167,7 @@ export function buildContainer(getWindow: () => BrowserWindow | null) {
     }
     return hints
   }
-  const runtime = new RuntimeService(projects, pm, docker, ports, settings, runtimeState, portHints, logger)
+  const runtime = new RuntimeService(projects, pm, docker, ports, settings, runtimeState, portHints, http, logger)
   const deviceFlowAvailable = clientId.length > 0
 
   return {

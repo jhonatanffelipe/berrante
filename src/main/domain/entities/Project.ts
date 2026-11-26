@@ -40,7 +40,8 @@ export const StartupPlanOps = {
     return {
       ...plan,
       services: services.map((s) => ({ ...s, dependsOn: s.dependsOn.filter((d) => ids.has(d)) })),
-      actions: plan.actions.filter((a) => !repoIds.includes(a.repoId))
+      actions: plan.actions.filter((a) => !repoIds.includes(a.repoId)),
+      ...(plan.profiles ? { profiles: plan.profiles.map((p) => ({ ...p, serviceIds: p.serviceIds.filter((id) => ids.has(id)) })) } : {})
     }
   }
 }

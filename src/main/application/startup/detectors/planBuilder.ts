@@ -188,7 +188,7 @@ export function buildPlan(detections: RepoDetection[], now: Date): StartupPlan {
 }
 
 /** Campos que o usuário edita e que uma nova detecção não deve sobrescrever. */
-const USER_FIELDS = ['enabled', 'order', 'env', 'cwd', 'color', 'command', 'name', 'waitFor'] as const
+const USER_FIELDS = ['enabled', 'order', 'env', 'cwd', 'color', 'command', 'name', 'waitFor', 'healthUrl', 'autoRestart'] as const
 
 /**
  * Re-detecção preservando edições: passos que continuam existindo mantêm os campos do usuário;
@@ -212,9 +212,12 @@ export function mergePlans(existing: StartupPlan | null, detected: StartupPlan):
   for (const old of existing.services) {
     if (!detectedIds.has(old.id) && old.origin !== 'detected') merged.push(old)
   }
+  const services = flattenWorkflow(merged)
+  const ids = new Set(services.map((s) => s.id))
   return {
-    services: flattenWorkflow(merged),
+    services,
     actions: detected.actions,
+    ...(existing.profiles ? { profiles: existing.profiles.map((p) => ({ ...p, serviceIds: p.serviceIds.filter((id) => ids.has(id)) })) } : {}),
     detectedAt: detected.detectedAt,
     updatedAt: existing.updatedAt
   }

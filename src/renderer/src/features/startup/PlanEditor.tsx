@@ -14,6 +14,7 @@ import { useTotp } from '../security/TotpProvider'
 import { Badge } from '../../components/ui/Badge'
 import { AiWorkflowDialog, type ApplyMode } from './AiWorkflowDialog'
 import { folderLabel } from './folderLabel'
+import { ProfilesEditor } from './ProfilesEditor'
 
 const envToText = (env: Record<string, string>) => Object.entries(env).map(([k, v]) => `${k}=${v}`).join('\n')
 const textToEnv = (text: string): Record<string, string> => {
@@ -45,7 +46,7 @@ function DetectionSummary({ d }: { d: RepoDetection }) {
   )
 }
 
-const WAIT_OPTIONS: WaitFor[] = ['exit', 'port', 'start']
+const WAIT_OPTIONS: WaitFor[] = ['exit', 'port', 'start', 'health']
 
 /** Rascunho sempre na ordem visível, com `order` contínuo e sem o `dependsOn` legado. */
 function normalize(plan: StartupPlan | null): StartupPlan | null {
@@ -112,6 +113,26 @@ function StepRow({
         </div>
         <button className="text-xs text-comment hover:text-fg" onClick={() => setShowEnv((v) => !v)}>{showEnv ? '− env' : `+ env${envCount ? ` (${envCount})` : ''}`}</button>
       </div>
+      {!legacy && waitFor !== 'exit' ? (
+        <div className="ml-[164px] flex flex-wrap items-center gap-4">
+          {waitFor === 'health' ? (
+            <label className="flex min-w-0 flex-1 items-center gap-2">
+              <span className="shrink-0 text-xs text-comment">health</span>
+              <input
+                className={cn('pixel-input !py-1 font-mono text-xs', !step.healthUrl && '!border-orange')}
+                placeholder="http://localhost:3000/health"
+                value={step.healthUrl ?? ''}
+                onChange={(e) => onChange({ healthUrl: e.target.value.trim() || null })}
+                aria-label="URL de healthcheck"
+              />
+            </label>
+          ) : null}
+          <label className="flex items-center gap-2 text-xs text-comment" title="Se o processo cair depois de estar de pé, sobe de novo (até 3 vezes em 5 minutos)">
+            <Switch checked={Boolean(step.autoRestart)} onCheckedChange={(v) => onChange({ autoRestart: v })} label={`Reiniciar ${step.name} se cair`} />
+            reinicia sozinho se cair
+          </label>
+        </div>
+      ) : null}
       {showEnv ? (
         <textarea
           key={`${step.id}:${envToText(step.env)}`}
@@ -277,6 +298,16 @@ export function PlanEditor({ project, onSaved }: { project: Project; onSaved: ()
           ))}
         </PixelBlock>
       )}
+      {draft && steps.length ? (
+        <ProfilesEditor
+          profiles={draft.profiles ?? []}
+          steps={steps}
+          onChange={(profiles) => {
+            setDraft((p) => (p ? { ...p, profiles } : p))
+            setDirty(true)
+          }}
+        />
+      ) : null}
       <AiWorkflowDialog suggestion={suggestion} repos={projectRepos} onClose={() => setSuggestion(null)} onApply={applySuggestion} />
     </div>
   )

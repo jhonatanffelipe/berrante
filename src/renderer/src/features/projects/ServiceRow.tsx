@@ -58,6 +58,7 @@ export function ServiceRow({ index, projectId, service, state, now }: Props) {
             <StatusBlock status={status} extra={active && state?.startedAt ? uptime(state.startedAt, now) : undefined} />
             <Badge>{stepLabel(service)}</Badge>
             {!service.enabled ? <Badge>fora do play</Badge> : null}
+            {service.autoRestart ? <Badge tone="cyan">reinicia sozinho</Badge> : null}
             {service.origin === 'ai' ? <Badge tone="purple">IA</Badge> : null}
           </div>
           <p className="mt-1 truncate font-mono text-xs text-comment">{service.kind === 'compose' ? `docker compose · ${service.command}${state?.container ? ` · ${state.container.name}` : ''}` : service.command}</p>

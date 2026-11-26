@@ -78,8 +78,9 @@ export type ServiceOrigin = 'detected' | 'readme' | 'ai' | 'user'
  * - exit:  o comando termina com sucesso (docker compose up -d, yarn install)
  * - port:  o processo abre uma porta TCP (yarn dev de uma API ou front)
  * - start: o processo continua vivo por alguns segundos (worker, fila)
+ * - health: uma URL local responde 2xx/3xx (`healthUrl`), mais confiável que porta aberta
  */
-export type WaitFor = 'exit' | 'port' | 'start'
+export type WaitFor = 'exit' | 'port' | 'start' | 'health'
 
 /** Um passo do workflow de subida: roda `command` em `cwd`, na ordem de `order`. */
 export interface ServiceDefinition {
@@ -98,6 +99,10 @@ export interface ServiceDefinition {
   order: number
   /** Ausente em planos antigos: veja `stepWaitFor`. */
   waitFor?: WaitFor
+  /** URL local (localhost/127.0.0.1) consultada quando `waitFor` é `health`. */
+  healthUrl?: string | null
+  /** Reinicia sozinho se o processo cair depois de estar de pé (com limite de tentativas). */
+  autoRestart?: boolean
   /** Legado: planos novos rodam só pela ordem e deixam vazio. */
   dependsOn: string[]
   color: DraculaAccent
@@ -110,9 +115,18 @@ export interface RepoAction {
   command: string
 }
 
+/** Perfil da tropa: um subconjunto dos passos para tocar (ex.: "só a API"). */
+export interface PlanProfile {
+  id: string
+  name: string
+  serviceIds: string[]
+}
+
 export interface StartupPlan {
   services: ServiceDefinition[]
   actions: RepoAction[]
+  /** Ausente em planos antigos. */
+  profiles?: PlanProfile[]
   detectedAt: string
   updatedAt: string
 }

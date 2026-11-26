@@ -1,6 +1,8 @@
 import { z } from 'zod'
 import { BLOCK_SHAPES, DRACULA_ACCENTS } from '../types/palette'
 import { ACCENT_NAMES } from '../theme'
+import { TERMINAL_APPS } from '../types/settings'
+import { isLocalHealthUrl } from '../workflow'
 
 /**
  * Schemas de entrada de cada canal IPC. Ficam no shared para o tipo ser inferido no renderer,
@@ -24,7 +26,9 @@ export const serviceDefinitionSchema = z.object({
   env: z.record(z.string().regex(/^[A-Za-z_][A-Za-z0-9_]*$/), z.string().max(8000)),
   enabled: z.boolean(),
   order: z.number().int().min(0).max(10_000),
-  waitFor: z.enum(['exit', 'port', 'start']).optional(),
+  waitFor: z.enum(['exit', 'port', 'start', 'health']).optional(),
+  healthUrl: z.string().max(500).refine(isLocalHealthUrl, 'O healthcheck precisa ser uma URL http(s) de localhost').nullable().optional(),
+  autoRestart: z.boolean().optional(),
   dependsOn: z.array(id).max(100),
   color: accent,
   origin: z.enum(['detected', 'readme', 'ai', 'user'])
@@ -33,6 +37,7 @@ export const serviceDefinitionSchema = z.object({
 export const startupPlanSchema = z.object({
   services: z.array(serviceDefinitionSchema).max(200),
   actions: z.array(z.object({ repoId: id, name: z.string().min(1).max(200), command: z.string().min(1).max(4000) })).max(500),
+  profiles: z.array(z.object({ id: z.string().min(1).max(80), name: z.string().trim().min(1).max(40), serviceIds: z.array(id).max(200) })).max(20).optional(),
   detectedAt: z.string(),
   updatedAt: z.string()
 })

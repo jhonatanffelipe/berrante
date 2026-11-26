@@ -8,7 +8,7 @@ export class CheckPortConflictsUseCase {
     private readonly runtime: RuntimeService
   ) {}
 
-  async execute(projectId: string): Promise<PortConflict[]> {
-    return this.runtime.conflicts(await this.getProject.execute(projectId))
+  async execute(projectId: string, profileId?: string | null): Promise<PortConflict[]> {
+    return this.runtime.conflicts(await this.getProject.execute(projectId), profileId)
   }
 }

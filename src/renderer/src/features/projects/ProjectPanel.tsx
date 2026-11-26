@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import * as Menu from '@radix-ui/react-dropdown-menu'
 import type { Preflight, Project, RepoGitResult } from '@shared/types'
 import { runtimeKey } from '@shared/runtime'
-import { isLongRunning, stepWaitFor } from '@shared/workflow'
+import { applyProfile, isLongRunning, stepWaitFor } from '@shared/workflow'
 import { call, errorMessage } from '../../lib/api'
 import { useInterval } from '../../lib/useAsync'
 import { PixelButton } from '../../components/ui/PixelButton'
@@ -79,6 +79,7 @@ export function ProjectPanel({ project }: { project: Project }) {
   useEffect(() => {
     setTab(project.plan ? 'boiada' : 'plano')
     setActionLog(null)
+    setProfileId(readProfile(project.id))
     wasAllRunning.current = null
   }, [project.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -90,7 +91,10 @@ export function ProjectPanel({ project }: { project: Project }) {
 
   const projectRepos = project.repositoryIds.map((id) => repos.find((r) => r.id === id)).filter((r): r is NonNullable<typeof r> => Boolean(r))
   const anyActive = runtime?.services.some((s) => s.status === 'running' || s.status === 'starting') ?? false
-  const plan = project.plan?.services ?? []
+  const profiles = project.plan?.profiles ?? []
+  const activeProfile = profiles.find((p) => p.id === profileId) ?? null
+  const plan = (project.plan ? applyProfile(project.plan, activeProfile?.id) : null)?.services ?? []
+  const lastPlay = runtime?.lastPlay ?? null
   const playable = plan.filter((s) => s.enabled && isLongRunning(s))
   const stateOf = new Map((runtime?.services ?? []).map((s) => [s.serviceId, s]))
   const running = playable.filter((s) => stateOf.get(s.id)?.status === 'running').length
@@ -251,6 +255,18 @@ export function ProjectPanel({ project }: { project: Project }) {
               {ports.length ? ports.map((p) => <Badge key={p} tone="green">:{p}</Badge>) : <span className="font-mono text-xs text-comment">nenhuma aberta</span>}
             </div>
           </div>
+          <div className="space-y-2">
+          {profiles.length ? (
+            <label className="flex items-center gap-2 text-xs text-comment">
+              <Term tech="Perfil: toca só um subconjunto dos passos (crie em Plano de subida → Perfis)">perfil</Term>
+              <select className="pixel-input !w-auto flex-1 !py-1 text-xs" value={activeProfile?.id ?? ''} onChange={(e) => chooseProfile(e.target.value || null)} aria-label="Perfil da tropa">
+                <option value="">Tropa completa</option>
+                {profiles.map((p) => (
+                  <option key={p.id} value={p.id}>{p.name} ({p.serviceIds.length} passo(s))</option>
+                ))}
+              </select>
+            </label>
+          ) : null}
           <div className="grid grid-cols-2 gap-2">
             <PixelButton size="lg" accent="accent" className="w-full !px-3" disabled={playing || !project.plan} onClick={() => void play()}>
               ▶ <Term tech="Start all: sobe todos os serviços habilitados na ordem do plano">{playing ? 'Tocando…' : 'Tocar o berrante'}</Term>
@@ -283,6 +299,7 @@ export function ProjectPanel({ project }: { project: Project }) {
                 </Menu.Content>
               </Menu.Portal>
             </Menu.Root>
+          </div>
           </div>
         </div>
       </PixelBlock>
