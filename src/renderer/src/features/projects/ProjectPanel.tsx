@@ -247,6 +247,12 @@ export function ProjectPanel({ project }: { project: Project }) {
             <b className="text-fg">{counts.steps}</b> passo(s) no workflow · <b className="text-fg">{playable.length}</b> fica(m) de pé · <b className="text-fg">{counts.oneShot}</b> roda(m) e termina(m) ·{' '}
             <b className="text-fg">{project.plan?.actions.length ?? 0}</b> ação(ões)
           </p>
+          {lastPlay ? (
+            <p className="mt-1.5 font-mono text-xs text-comment">
+              última subida às {clockTime(lastPlay.finishedAt)} ·{' '}
+              {lastPlay.ok ? <span className="text-green">de pé em {duration(lastPlay.durationMs)}</span> : <span className="text-red">parou em &quot;{lastPlay.haltedAt}&quot; após {duration(lastPlay.durationMs)}</span>}
+            </p>
+          ) : null}
         </div>
         <div className="flex min-w-0 flex-col justify-between gap-4 border-l border-line/60 pl-6">
           <div>

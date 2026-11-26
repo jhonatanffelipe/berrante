@@ -146,6 +146,8 @@ export const ipcSchemas = {
     accent: z.enum(ACCENT_NAMES).optional(),
     tintBackground: z.boolean().optional(),
     showGrid: z.boolean().optional(),
+    notifications: z.boolean().optional(),
+    terminalApp: z.enum(TERMINAL_APPS).optional(),
     stopTimeoutMs: z.number().int().min(500).max(60_000).optional()
   }),
   'settings:setAiEnabled': z.object({ enabled: z.boolean(), totpCode: totpCode.optional() }),

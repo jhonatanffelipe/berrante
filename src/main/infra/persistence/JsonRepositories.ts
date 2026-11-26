@@ -58,6 +58,8 @@ export const DEFAULT_SETTINGS = (): Settings => ({
   accent: 'azul',
   tintBackground: true,
   showGrid: true,
+  notifications: true,
+  terminalApp: 'Terminal',
   stopTimeoutMs: 5000
 })
 

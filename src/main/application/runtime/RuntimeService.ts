@@ -1,4 +1,4 @@
-import type { PortConflict, Project, ProjectRuntime, RunningProcess, ServiceDefinition, StartResult } from '@shared/types'
+import type { PlaySummary, PortConflict, Project, ProjectRuntime, RunningProcess, ServiceDefinition, StartResult } from '@shared/types'
 import { actionServiceId, runtimeKey } from '@shared/runtime'
 import { applyProfile, composeStopCommand, isLongRunning, stepWaitFor } from '@shared/workflow'
 import type { ProjectRepository, RuntimeStateRepository, SettingsRepository } from '@main/domain/repositories'
@@ -40,6 +40,9 @@ export class RuntimeService {
   private timer: NodeJS.Timeout | null = null
   private polling = false
   private playing = new Set<string>()
+  private lastPlay = new Map<string, PlaySummary>()
+  private restarts = new Map<string, number[]>()
+  private eventListeners: ((event: RuntimeEvent) => void)[] = []
 
   constructor(
     private readonly projects: ProjectRepository,
@@ -82,6 +85,20 @@ export class RuntimeService {
     this.listeners.push(listener)
   }
 
+  onEvent(listener: (event: RuntimeEvent) => void): void {
+    this.eventListeners.push(listener)
+  }
+
+  private fire(event: RuntimeEvent): void {
+    for (const l of this.eventListeners) {
+      try {
+        l(event)
+      } catch (err) {
+        this.logger.warn('runtime.event.listener.failed', { type: event.type, error: (err as Error).message })
+      }
+    }
+  }
+
   // ------------------------------------------------------------------ consultas
 
   private key(projectId: string, serviceId: string): string {
@@ -105,7 +122,14 @@ export class RuntimeService {
     // Passos que terminam (compose up -d, install) não contam: "boiada completa" = todo processo longo de pé.
     const enabled = (project.plan?.services ?? []).filter((s) => s.enabled && isLongRunning(s))
     const allRunning = enabled.length > 0 && enabled.every((s) => this.get(project.id, s.id).status === 'running')
-    return { projectId: project.id, services, allRunning }
+    return { projectId: project.id, services, allRunning, lastPlay: this.lastPlay.get(project.id) ?? null }
+  }
+
+  /** Quantos processos longos de cada tropa estão de pé (para o ícone da barra de menu). */
+  summary(project: Project): { running: number; total: number; playing: boolean } {
+    const enabled = (project.plan?.services ?? []).filter((s) => s.enabled && isLongRunning(s))
+    const running = enabled.filter((s) => this.get(project.id, s.id).status === 'running').length
+    return { running, total: enabled.length, playing: this.playing.has(project.id) }
   }
 
   hasActive(projectId: string): boolean {
@@ -191,7 +215,12 @@ export class RuntimeService {
     } finally {
       this.playing.delete(project.id)
     }
-    this.logger.info('runtime.play', { projectId: project.id, started: started.length, haltedAt: halted?.id ?? null, durationMs: Date.now() - started0 })
+    const durationMs = Date.now() - started0
+    const summary: PlaySummary = { finishedAt: new Date().toISOString(), durationMs, ok: !halted, haltedAt: halted?.name ?? null }
+    this.lastPlay.set(project.id, summary)
+    this.emit(project.id)
+    this.fire({ type: 'played', projectId: project.id, projectName: project.name, summary })
+    this.logger.info('runtime.play', { projectId: project.id, profileId: profileId ?? null, started: started.length, haltedAt: halted?.id ?? null, durationMs })
     return { started, skipped, conflicts: [] }
   }
 

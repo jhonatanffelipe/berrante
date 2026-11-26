@@ -11,6 +11,10 @@ export interface Settings {
   accent: AccentName
   tintBackground: boolean
   showGrid: boolean
+  /** Avisos do macOS quando a boiada sobe, um passo falha ou um serviço cai. */
+  notifications: boolean
+  /** App usado em "Abrir terminal na pasta". */
+  terminalApp: TerminalApp
   stopTimeoutMs: number
 }
 

@@ -20,10 +20,20 @@ export interface ContainerState {
   ports: string[]
 }
 
+/** Resumo da última vez que o berrante tocou para a tropa (só na memória do app). */
+export interface PlaySummary {
+  finishedAt: string
+  durationMs: number
+  ok: boolean
+  /** Nome do passo que falhou, se o workflow parou no meio. */
+  haltedAt: string | null
+}
+
 export interface ProjectRuntime {
   projectId: string
   services: RunningProcess[]
   allRunning: boolean
+  lastPlay: PlaySummary | null
 }
 
 export interface LogChunk {

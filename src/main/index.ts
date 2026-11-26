@@ -9,6 +9,8 @@ import { buildHandlers } from './ipc/controllers'
 import { buildAppMenu, installAboutPanel } from './ui/appMenu'
 import { runDevShots } from './ui/devShots'
 import { checkInstall } from './ui/installCheck'
+import { BerranteTray } from './ui/tray'
+import { notificationFor, notify } from './ui/notifier'
 import type { MenuCommand } from '@shared/menu'
 
 const DEV_URL = process.env.ELECTRON_RENDERER_URL
@@ -16,6 +18,8 @@ const DEV_URL = process.env.ELECTRON_RENDERER_URL
 let mainWindow: BrowserWindow | null = null
 let container: Container | null = null
 let quitting = false
+let tray: BerranteTray | null = null
+let trayTimer: NodeJS.Timeout | null = null
 
 const CSP = [
   "default-src 'self'",
@@ -94,7 +98,67 @@ function wireEvents(c: Container): void {
       }, 60)
     }
   })
-  c.runtime.onStatus((rt) => mainWindow?.webContents.send('runtime:status', rt))
+  c.runtime.onStatus((rt) => {
+    mainWindow?.webContents.send('runtime:status', rt)
+    scheduleTray(c)
+  })
+  // Avisos do macOS só quando a janela não está em foco (na janela, o painel já mostra tudo).
+  c.runtime.onEvent((event) => {
+    scheduleTray(c)
+    void c.useCases.getSettings.execute().then((s) => {
+      if (!s.notifications || mainWindow?.isFocused()) return
+      const { title, body } = notificationFor(event)
+      notify(title, body, () => sendMenuCommand({ type: 'project', id: event.projectId }))
+    })
+  })
+}
+
+/** Ícone da barra de menu: reconstruído no máximo a cada 400ms (status chega em rajadas). */
+function scheduleTray(c: Container): void {
+  if (trayTimer) return
+  trayTimer = setTimeout(() => {
+    trayTimer = null
+    void refreshTray(c)
+  }, 400)
+}
+
+async function refreshTray(c: Container): Promise<void> {
+  const projects = await c.useCases.listProjects.execute().catch(() => [])
+  tray?.update(projects.map((project) => ({ project, ...c.runtime.summary(project), active: c.runtime.hasActive(project.id) })))
+}
+
+function createTray(c: Container): void {
+  tray = new BerranteTray({
+    play: (projectId) => {
+      scheduleTray(c)
+      void c.useCases.startProject
+        .execute(projectId)
+        .then((result) => {
+          if (result.conflicts.length) {
+            const ports = result.conflicts.map((x) => `:${x.port}`).join(' ')
+            notify('Porta ocupada no pasto', `Antes de tocar o berrante, libere ${ports}.`, () => sendMenuCommand({ type: 'project', id: projectId }))
+          }
+        })
+        .catch((err) => notify('O berrante falhou', (err as Error).message))
+        .finally(() => scheduleTray(c))
+    },
+    stop: (projectId) => {
+      void c.useCases.stopAll
+        .execute(projectId)
+        .catch((err) => notify('Falha ao recolher', (err as Error).message))
+        .finally(() => scheduleTray(c))
+    },
+    open: (projectId) => {
+      if (projectId) sendMenuCommand({ type: 'project', id: projectId })
+      else if (mainWindow) {
+        mainWindow.show()
+        mainWindow.focus()
+      } else sendMenuCommand({ type: 'go', view: 'repos' })
+    },
+    stopEverything: () => void c.runtime.stopEverything().finally(() => scheduleTray(c)),
+    quit: () => app.quit()
+  })
+  void refreshTray(c)
 }
 
 /** Comando do menu: garante a janela aberta e em foco antes de repassar ao renderer. */
@@ -179,11 +243,12 @@ app.whenReady().then(async () => {
   const c = container
   const handlers = buildHandlers(c.useCases)
   // O menu lista as tropas: reconstrói sempre que elas mudam.
-  for (const channel of ['projects:create', 'projects:update', 'projects:delete'] as const) {
+  for (const channel of ['projects:create', 'projects:update', 'projects:delete', 'startup:savePlan'] as const) {
     const original = handlers[channel] as (input: never) => Promise<unknown>
     ;(handlers as Record<string, unknown>)[channel] = async (input: never) => {
       const result = await original(input)
       void refreshMenu(c)
+      scheduleTray(c)
       return result
     }
   }
@@ -192,6 +257,7 @@ app.whenReady().then(async () => {
   installAboutPanel(app.isPackaged ? undefined : join(__dirname, '../../build/icon.png'))
   await refreshMenu(c)
   wireEvents(container)
+  createTray(container)
   await container.runtime.init().catch((err) => container?.logger.error('runtime.init.failed', { error: (err as Error).message }))
   container.logger.info('app.ready', { version: app.getVersion(), platform: process.platform, arch: process.arch, rosetta: app.runningUnderARM64Translation, path: app.getPath('exe') })
 

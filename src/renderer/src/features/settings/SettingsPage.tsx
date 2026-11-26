@@ -237,6 +237,20 @@ export function SettingsPage() {
         </div>
       </Section>
 
+      <Section title="Dia a dia">
+        <label className="flex items-center gap-3">
+          <Switch checked={settings.notifications} onCheckedChange={(v) => void patch({ notifications: v })} label="Avisos do sistema" />
+          Avisar no macOS quando a boiada subir, um passo falhar ou um serviço cair <span className="text-comment">(só com a janela fora de foco)</span>
+        </label>
+        <Field label="Terminal para abrir as pastas">
+          <select className="pixel-input !w-48" value={settings.terminalApp} onChange={(e) => void patch({ terminalApp: e.target.value as TerminalApp })}>
+            {TERMINAL_APPS.map((t) => (
+              <option key={t} value={t}>{t}</option>
+            ))}
+          </select>
+        </Field>
+      </Section>
+
       <Section title="Processos">
         <Field label="SIGTERM → SIGKILL (ms)">
           <input type="number" min={500} max={60000} step={500} className="pixel-input w-32" value={settings.stopTimeoutMs} onChange={(e) => void patch({ stopTimeoutMs: Number(e.target.value) })} />
