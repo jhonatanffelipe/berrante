@@ -282,10 +282,10 @@ export function ProjectPanel({ project }: { project: Project }) {
             </label>
           ) : null}
           <div className="grid grid-cols-2 gap-2">
-            <PixelButton size="lg" accent="accent" className="w-full !px-3" disabled={playing || !project.plan} onClick={() => void play()}>
+            <PixelButton size="lg" accent="accent" className="w-full whitespace-nowrap !px-3 !tracking-[0.08em]" disabled={playing || !project.plan} onClick={() => void play()}>
               ▶ <Term tech="Start all: sobe todos os serviços habilitados na ordem do plano">{playing ? 'Tocando…' : 'Tocar o berrante'}</Term>
             </PixelButton>
-            <PixelButton size="lg" className="w-full !px-3 text-red" disabled={stopping || !anyActive} onClick={() => void stopAll()}>
+            <PixelButton size="lg" className="w-full whitespace-nowrap !px-3 !tracking-[0.08em] text-red" disabled={stopping || !anyActive} onClick={() => void stopAll()}>
               ■ <Term tech="Stop all: para processos (SIGTERM → SIGKILL no grupo) e containers da tropa">Recolher</Term>
             </PixelButton>
             <PixelButton size="lg" className="w-full whitespace-nowrap !px-3 !tracking-[0.08em]" disabled={checking || playing || !project.plan} onClick={() => void checkPorts()}>
@@ -293,7 +293,7 @@ export function ProjectPanel({ project }: { project: Project }) {
             </PixelButton>
             <Menu.Root>
               <Menu.Trigger asChild>
-                <PixelButton size="lg" className="w-full !px-3" aria-label="Mais opções">⋮ Mais</PixelButton>
+                <PixelButton size="lg" className="w-full whitespace-nowrap !px-3 !tracking-[0.08em]" aria-label="Mais opções">⋮ Mais</PixelButton>
               </Menu.Trigger>
               <Menu.Portal>
                 <Menu.Content align="end" sideOffset={6} className="z-50 min-w-48 rounded border border-line bg-deep p-1 shadow-lg">
