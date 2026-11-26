@@ -241,7 +241,9 @@ export function ProjectPanel({ project }: { project: Project }) {
           </div>
           <div className="mt-4 flex items-end gap-4">
             <PixelDigits value={`${running}/${playable.length}`} cell={9} />
-            <span className="mb-1 font-mono text-xl font-bold text-fg">de pé</span>
+            <Term tech="Conta só os processos que ficam rodando (dev server, worker, container). Passos que rodam e terminam, como docker compose up -d e install, não entram.">
+              <span className="mb-1 font-mono text-xl font-bold text-fg">{playable.length === 1 ? 'processo de pé' : 'processos de pé'}</span>
+            </Term>
           </div>
           <p className="mt-4 text-[13px] text-fg/80">
             <b className="text-fg">{counts.steps}</b> passo(s) no workflow · <b className="text-fg">{playable.length}</b> fica(m) de pé · <b className="text-fg">{counts.oneShot}</b> roda(m) e termina(m) ·{' '}

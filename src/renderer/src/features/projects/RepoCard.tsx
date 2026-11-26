@@ -75,10 +75,18 @@ export function RepoCard({ project, repo, runtime, now, git, onAction, onOpenPor
               {'>_'}
             </PixelButton>
           </Tip>
-          <SegmentBar value={playable.length ? running / playable.length : 0} segments={Math.max(playable.length * 3, 6)} height={10} />
-          <span className="font-mono text-xs font-bold text-fg">
-            {running}/{playable.length} <span className="font-normal text-comment">de pé</span>
-          </span>
+          {playable.length ? (
+            <>
+              <SegmentBar value={running / playable.length} segments={Math.max(playable.length * 3, 6)} height={10} />
+              <span className="font-mono text-xs font-bold text-fg">
+                {running}/{playable.length} <span className="font-normal text-comment">{playable.length === 1 ? 'processo de pé' : 'processos de pé'}</span>
+              </span>
+            </>
+          ) : (
+            <Tip label="Este repositório só tem passos que rodam e terminam (rede, docker compose up -d, install): não há processo para ficar de pé.">
+              <span className="font-mono text-xs text-comment">só preparo</span>
+            </Tip>
+          )}
         </div>
       </header>
       <div className="divide-y divide-line/50">
