@@ -4,6 +4,33 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 [SemVer](https://semver.org/lang/pt-BR/). Enquanto estiver em `0.x`, versões menores podem mudar o formato dos
 dados; quando isso acontecer, a nota da versão avisa.
 
+## [Não lançado]
+
+Ferramentas do dia a dia: git da tropa, vistoria antes de subir, perfis e atalhos.
+
+### Adicionado
+- **Marcar a tropa:** cada repositório mostra a branch, as alterações não salvas e os commits à frente/atrás do
+  remoto. No menu **⋮ Mais**: **Atualizar repos (pull)** em todos de uma vez e **Buscar novidades (fetch)**.
+- **Trocar de pasto:** troca de branch em todos os repositórios da tropa que a têm; quem tem alteração não salva fica
+  onde está.
+- **Vistoria do pasto:** antes de tocar o berrante (e no botão **Conferir porteiras**), além das portas ocupadas, avisa
+  quando falta `.env` ou variável do `.env.example`, com botão para **criar** ou **completar** o `.env` (só anexa as
+  chaves que faltam, nunca reescreve).
+- **Segue ao responder (health):** um passo pode esperar uma URL local (`http://localhost:3000/health`) responder antes
+  de liberar o próximo.
+- **Reinicia sozinho se cair:** opção por passo; até 3 tentativas em 5 minutos, com espera crescente.
+- **Perfis da tropa:** subconjuntos de passos (ex.: "só a API") criados em **Plano de subida → Perfis** e escolhidos no
+  cabeçalho da tropa.
+- **Avisos do macOS** quando a boiada sobe, um passo falha ou um serviço cai (com a janela fora de foco; desligue em
+  **Configurações → Dia a dia**).
+- **Berrante na barra de menu:** tocar e recolher cada tropa sem abrir a janela, com o total de processos de pé.
+- **Duração da última subida** no cabeçalho da tropa.
+- **Log:** busca (Enter / ⇧Enter), **próximo erro** e **copiar** o log inteiro sem as cores ANSI.
+- **Atalhos:** clicar numa porta abre `http://localhost:<porta>` no navegador; o botão `>_` abre o terminal (Terminal,
+  iTerm, Warp ou Ghostty) na pasta do repositório.
+- **Vários repositórios de uma vez:** selecione e clone vários do GitHub juntos, importe várias pastas locais no mesmo
+  diálogo (⌘-clique) e, na tropa, filtre e marque todos.
+
 ## [0.4.0] — 2026-11-26
 
 Abra o código da tropa no VS Code com um clique.

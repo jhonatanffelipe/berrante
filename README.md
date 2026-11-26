@@ -37,7 +37,17 @@ de preparo e scripts de dev na ordem certa, com um clique.
 - **VS Code a um clique:** cada tropa pode apontar para um `.code-workspace`; o botão **VS Code** (`⌘O`) abre ele.
 - **Contar a boiada:** todas as portas abertas da máquina, com PID, comando e de qual tropa é. Avisa antes de subir
   se alguma porta já estiver ocupada.
-- **GitHub integrado:** login pelo `gh` ou por código, lista, clone e pull, com o token guardado cifrado.
+- **Git da tropa:** branch, alterações e commits à frente/atrás de cada repo; **pull** em todos de uma vez e
+  **trocar de pasto** (mudar de branch na tropa toda).
+- **Vistoria antes de subir:** portas ocupadas e `.env` faltando variáveis do exemplo, com botão para criar ou
+  completar o `.env`.
+- **Perfis, healthcheck e reinício automático:** suba só parte da tropa, espere uma URL `/health` responder e deixe o
+  serviço que cair subir sozinho de novo.
+- **Barra de menu e avisos:** toque e recolha tropas pelo ícone na barra de menu e receba avisos do macOS quando a
+  boiada subir ou um serviço cair.
+- **Atalhos do dia a dia:** porta abre no navegador, `>_` abre o terminal na pasta, log com busca, próximo erro e
+  copiar.
+- **GitHub integrado:** login pelo `gh` ou por código, lista, clone (vários de uma vez) e pull, com o token guardado cifrado.
 - **IA opcional e sob controle:** Claude Code ou Antigravity leem os repositórios em modo somente leitura e sugerem
   um workflow, com o porquê de cada passo; você escolhe o que entra.
 - **2FA (TOTP)** para as ações sensíveis, como a IA e encerrar processos de fora.
