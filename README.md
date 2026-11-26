@@ -16,7 +16,7 @@ de preparo e scripts de dev na ordem certa, com um clique.
 [Novidades](CHANGELOG.md) ·
 [Desenvolvimento](docs/desenvolvimento.md)
 
-<img src="docs/images/hero.png" alt="Berrante com a tropa Fazenda de pé: 3 de 3 processos rodando, branch e alterações de cada repo, portas clicáveis, perfil e duração da última subida" width="100%">
+<img src="docs/images/hero.png" alt="Berrante com a tropa Fazenda de pé: 3 de 3 processos rodando, branch e alterações de cada repo, portas clicáveis, perfil, duração da última subida e passos fora do play marcados em laranja, sem número" width="100%">
 
 </div>
 
