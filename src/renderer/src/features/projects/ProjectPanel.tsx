@@ -6,7 +6,7 @@ import { isLongRunning, stepWaitFor } from '@shared/workflow'
 import { call, errorMessage } from '../../lib/api'
 import { useInterval } from '../../lib/useAsync'
 import { PixelButton } from '../../components/ui/PixelButton'
-import { Term, Tip } from '../../components/ui/Term'
+import { Term } from '../../components/ui/Term'
 import { StatusBlock } from '../../components/ui/StatusBlock'
 import { Tetromino } from '../../components/ui/Tetromino'
 import { Tabs, TabsContent, TabsList } from '../../components/ui/Tabs'
@@ -33,6 +33,7 @@ export function ProjectPanel({ project }: { project: Project }) {
   const [now, setNow] = useState(Date.now())
   const [playing, setPlaying] = useState(false)
   const [stopping, setStopping] = useState(false)
+  const [checking, setChecking] = useState(false)
   const [conflicts, setConflicts] = useState<PortConflict[] | null>(null)
   const [editing, setEditing] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -68,6 +69,13 @@ export function ProjectPanel({ project }: { project: Project }) {
     setPlaying(true)
     setConflicts(null)
     try {
+      if (!ignoreConflicts) {
+        const found = await call('runtime:checkConflicts', { projectId: project.id })
+        if (found.length) {
+          setConflicts(found)
+          return
+        }
+      }
       const result = await call('runtime:startAll', { projectId: project.id, ignoreConflicts })
       if (result.conflicts.length) {
         setConflicts(result.conflicts)
@@ -78,6 +86,20 @@ export function ProjectPanel({ project }: { project: Project }) {
       toast({ title: 'O berrante falhou', body: errorMessage(err), accent: 'red' })
     } finally {
       setPlaying(false)
+    }
+  }
+
+  /** "Conferir as porteiras": só checa se as portas do plano estão livres, sem subir nada. */
+  const checkPorts = async () => {
+    setChecking(true)
+    try {
+      const found = await call('runtime:checkConflicts', { projectId: project.id })
+      if (found.length) setConflicts(found)
+      else toast({ title: 'Porteiras abertas', body: 'Nenhuma porta do plano está ocupada. Pode tocar o berrante.', accent: 'green' })
+    } catch (err) {
+      toast({ title: 'Não deu para conferir', body: errorMessage(err), accent: 'red' })
+    } finally {
+      setChecking(false)
     }
   }
 
@@ -164,26 +186,27 @@ export function ProjectPanel({ project }: { project: Project }) {
               {ports.length ? ports.map((p) => <Badge key={p} tone="green">:{p}</Badge>) : <span className="font-mono text-xs text-comment">nenhuma aberta</span>}
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <PixelButton size="lg" accent="accent" disabled={playing || !project.plan} onClick={() => void play()}>
+          <div className="grid grid-cols-2 gap-2">
+            <PixelButton size="lg" accent="accent" className="w-full !px-3" disabled={playing || !project.plan} onClick={() => void play()}>
               ▶ <Term tech="Start all: sobe todos os serviços habilitados na ordem do plano">{playing ? 'Tocando…' : 'Tocar o berrante'}</Term>
             </PixelButton>
-            <PixelButton size="lg" className="text-red" disabled={stopping || !anyActive} onClick={() => void stopAll()}>
+            <PixelButton size="lg" className="w-full !px-3 text-red" disabled={stopping || !anyActive} onClick={() => void stopAll()}>
               ■ <Term tech="Stop all: para processos (SIGTERM → SIGKILL no grupo) e containers da tropa">Recolher</Term>
             </PixelButton>
-            {project.workspaceFile ? (
-              <Tip label={`Abrir ${project.workspaceFile.split('/').pop()} (⌘O)`}>
-                <PixelButton size="lg" onClick={() => void openWorkspace()} aria-label="Abrir no VS Code">
-                  {'</>'} VS Code
-                </PixelButton>
-              </Tip>
-            ) : null}
+            <PixelButton size="lg" className="w-full !px-3" disabled={checking || playing || !project.plan} onClick={() => void checkPorts()}>
+              ⌕ <Term tech="Port check: verifica se alguma porta que o plano vai usar já está ocupada por outro processo">{checking ? 'Conferindo…' : 'Conferir porteiras'}</Term>
+            </PixelButton>
             <Menu.Root>
               <Menu.Trigger asChild>
-                <PixelButton size="lg" aria-label="Mais opções">⋮</PixelButton>
+                <PixelButton size="lg" className="w-full !px-3" aria-label="Mais opções">⋮ Mais</PixelButton>
               </Menu.Trigger>
               <Menu.Portal>
-                <Menu.Content align="end" sideOffset={6} className="z-50 min-w-40 rounded border border-line bg-deep p-1 shadow-lg">
+                <Menu.Content align="end" sideOffset={6} className="z-50 min-w-48 rounded border border-line bg-deep p-1 shadow-lg">
+                  {project.workspaceFile ? (
+                    <Menu.Item onSelect={() => void openWorkspace()} className="flex cursor-pointer items-center justify-between gap-4 rounded-sm px-3 py-2 outline-none data-[highlighted]:bg-line">
+                      Abrir no VS Code <span className="font-mono text-[11px] text-comment">⌘O</span>
+                    </Menu.Item>
+                  ) : null}
                   <Menu.Item onSelect={() => setEditing(true)} className="cursor-pointer rounded-sm px-3 py-2 outline-none data-[highlighted]:bg-line">Editar tropa</Menu.Item>
                   <Menu.Item onSelect={() => setConfirmDelete(true)} className="cursor-pointer rounded-sm px-3 py-2 text-red outline-none data-[highlighted]:bg-line">Apagar tropa</Menu.Item>
                 </Menu.Content>
@@ -229,7 +252,7 @@ export function ProjectPanel({ project }: { project: Project }) {
         </TabsContent>
       </Tabs>
 
-      <Dialog open={conflicts !== null} onOpenChange={(o) => !o && setConflicts(null)} title="Porta ocupada no pasto" description="Antes de tocar o berrante, estas portas já estão em uso por outros processos:" accent="orange">
+      <Dialog open={conflicts !== null} onOpenChange={(o) => !o && setConflicts(null)} title="Porta ocupada no pasto" description="Estas portas que a tropa vai usar já estão em uso por outros processos:" accent="orange">
         <div className="space-y-2">
           {conflicts?.map((c) => (
             <div key={`${c.serviceId}-${c.port}`} className="rounded border border-line bg-darker px-3 py-2 font-mono text-xs">
