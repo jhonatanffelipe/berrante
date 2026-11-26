@@ -4,7 +4,9 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 [SemVer](https://semver.org/lang/pt-BR/). Enquanto estiver em `0.x`, versões menores podem mudar o formato dos
 dados; quando isso acontecer, a nota da versão avisa.
 
-## [Não lançado]
+## [0.3.0] — 2026-11-26
+
+Controle dos containers Docker de dentro do Berrante.
 
 ### Adicionado
 - **Curral** (`⇧⌘D`): todos os containers Docker da máquina, ao vivo, com estado, health, portas, projeto compose e

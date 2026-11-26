@@ -6,6 +6,7 @@ Cada pasta guarda as notas de uma versão. Os instaladores ficam anexados ao
 
 | Versão | Data | Plataformas | Notas |
 |---|---|---|---|
+| [v0.3.0](v0.3.0/README.md) | 2026-11-26 | macOS (arm64 e x64) | Curral e aba Containers: parar, subir e reiniciar containers |
 | [v0.2.1](v0.2.1/README.md) | 2026-11-26 | macOS (arm64 e x64) | Assinatura ad-hoc (sem "danificado") e avisos de instalação |
 | [v0.2.0](v0.2.0/README.md) | 2026-11-26 | macOS (arm64 e x64) | Workflow de subida simplificado e IA como sugestão |
 | [v0.1.0](v0.1.0/README.md) | 2026-11-25 | macOS (arm64 e x64) | Primeira versão pública |
