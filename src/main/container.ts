@@ -26,6 +26,9 @@ import { AiCliAdapter } from './infra/ai/AiCliAdapter'
 import { DockerRepoInspector } from './infra/inspector/DockerRepoInspector'
 import { ElectronShell } from './infra/electron/ElectronShell'
 import { VsCodeEditor } from './infra/editor/VsCodeEditor'
+import { MacTerminal } from './infra/terminal/MacTerminal'
+import { FetchHttpProbe } from './infra/http/FetchHttpProbe'
+import { FsEnvFile } from './infra/env/FsEnvFile'
 import { hostPorts } from './application/startup/detectors/composeParser'
 
 import { TotpGuard } from './application/security/TotpGuard'
@@ -126,6 +129,9 @@ export function buildContainer(getWindow: () => BrowserWindow | null) {
   const inspector = new DockerRepoInspector(runner)
   const shell = new ElectronShell(getWindow)
   const editor = new VsCodeEditor(runner)
+  const terminal = new MacTerminal(runner)
+  const http = new FetchHttpProbe()
+  const envFiles = new FsEnvFile()
 
   // ---- serviços de aplicação
   const guard = new TotpGuard(secrets, totp, hasher, clock)
@@ -207,6 +213,7 @@ export function buildContainer(getWindow: () => BrowserWindow | null) {
       // runtime
       getRuntime: new GetRuntimeUseCase(getProject, runtime),
       checkConflicts: new CheckPortConflictsUseCase(getProject, runtime),
+      preflight: new PreflightUseCase(getProject, runtime, checkEnv),
       startProject: new StartProjectUseCase(getProject, runtime),
       stopAll: new StopAllUseCase(getProject, runtime),
       startService: new StartServiceUseCase(getProject, runtime),

@@ -220,6 +220,31 @@ export interface ShellGateway {
   pickFile(title: string, filter: { name: string; extensions: string[] }, defaultPath?: string): Promise<string | null>
 }
 
+// ---------- Terminal, navegador e arquivos de ambiente ----------
+
+export interface TerminalGateway {
+  /** Abre o app de terminal (nome validado pelo enum das configurações) na pasta. */
+  open(app: string, cwd: string): Promise<void>
+}
+
+export interface BrowserGateway {
+  /** Abre http://localhost:<porta> no navegador padrão. */
+  openLocalPort(port: number): Promise<void>
+}
+
+/** Consulta de healthcheck local (GET com timeout curto). */
+export interface HttpProbe {
+  ok(url: string): Promise<boolean>
+}
+
+/** Escrita do `.env` na raiz do repositório (nunca loga os valores). */
+export interface EnvFileGateway {
+  read(repoPath: string, file: string): Promise<string | null>
+  /** Cria o arquivo só se ele não existir. */
+  create(repoPath: string, file: string, content: string): Promise<void>
+  append(repoPath: string, file: string, content: string): Promise<void>
+}
+
 // ---------- Editor ----------
 
 /** VS Code: confere e abre arquivos `.code-workspace`. */

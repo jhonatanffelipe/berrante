@@ -38,6 +38,7 @@ export const IPC_CHANNELS = [
   'startup:pickFolder',
   'runtime:get',
   'runtime:checkConflicts',
+  'runtime:preflight',
   'runtime:startAll',
   'runtime:stopAll',
   'runtime:startService',

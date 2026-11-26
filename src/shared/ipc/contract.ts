@@ -77,6 +77,7 @@ export interface IpcOutputs {
 
   'runtime:get': ProjectRuntime
   'runtime:checkConflicts': PortConflict[]
+  'runtime:preflight': Preflight
   'runtime:startAll': StartResult
   'runtime:stopAll': void
   'runtime:startService': void

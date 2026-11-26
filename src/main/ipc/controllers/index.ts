@@ -46,8 +46,9 @@ export function buildHandlers(uc: UseCases): Handlers {
     'startup:pickFolder': (i) => uc.pickStepFolder.execute(i.projectId, i.defaultPath),
 
     'runtime:get': (i) => uc.getRuntime.execute(i.projectId),
-    'runtime:checkConflicts': (i) => uc.checkConflicts.execute(i.projectId),
-    'runtime:startAll': (i) => uc.startProject.execute(i.projectId, i.ignoreConflicts),
+    'runtime:checkConflicts': (i) => uc.checkConflicts.execute(i.projectId, i.profileId),
+    'runtime:preflight': (i) => uc.preflight.execute(i.projectId, i.profileId),
+    'runtime:startAll': (i) => uc.startProject.execute(i.projectId, i.ignoreConflicts, i.profileId),
     'runtime:stopAll': (i) => uc.stopAll.execute(i.projectId),
     'runtime:startService': (i) => uc.startService.execute(i.projectId, i.serviceId),
     'runtime:stopService': (i) => uc.stopService.execute(i.projectId, i.serviceId),

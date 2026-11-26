@@ -97,20 +97,27 @@ export function ProjectPanel({ project }: { project: Project }) {
   const counts = { steps: plan.filter((s) => s.enabled).length, oneShot: plan.filter((s) => s.enabled && stepWaitFor(s) === 'exit' && s.kind !== 'compose').length }
   const ports = [...new Set((runtime?.services ?? []).flatMap((s) => s.ports))].sort((a, b) => a - b)
 
+  const chooseProfile = (id: string | null) => {
+    setProfileId(id)
+    writeProfile(project.id, id)
+  }
+
+  const runPreflight = () => call('runtime:preflight', { projectId: project.id, profileId: activeProfile?.id ?? null })
+
   const play = async (ignoreConflicts = false) => {
     setPlaying(true)
-    setConflicts(null)
+    setPreflight(null)
     try {
       if (!ignoreConflicts) {
-        const found = await call('runtime:checkConflicts', { projectId: project.id })
-        if (found.length) {
-          setConflicts(found)
+        const found = await runPreflight()
+        if (hasIssues(found)) {
+          setPreflight({ data: found, mode: 'play' })
           return
         }
       }
-      const result = await call('runtime:startAll', { projectId: project.id, ignoreConflicts })
+      const result = await call('runtime:startAll', { projectId: project.id, ignoreConflicts, profileId: activeProfile?.id ?? null })
       if (result.conflicts.length) {
-        setConflicts(result.conflicts)
+        setPreflight({ data: { conflicts: result.conflicts, env: [] }, mode: 'play' })
         return
       }
       if (result.skipped.length) toast({ title: 'O workflow parou no meio', body: `Um passo falhou e ${result.skipped.length} passo(s) seguinte(s) não rodaram. Veja o log.`, accent: 'orange' })
@@ -121,13 +128,13 @@ export function ProjectPanel({ project }: { project: Project }) {
     }
   }
 
-  /** "Conferir as porteiras": só checa se as portas do plano estão livres, sem subir nada. */
+  /** "Conferir as porteiras": portas do plano livres e `.env` em dia, sem subir nada. */
   const checkPorts = async () => {
     setChecking(true)
     try {
-      const found = await call('runtime:checkConflicts', { projectId: project.id })
-      if (found.length) setConflicts(found)
-      else toast({ title: 'Porteiras abertas', body: 'Nenhuma porta do plano está ocupada. Pode tocar o berrante.', accent: 'green' })
+      const found = await runPreflight()
+      if (hasIssues(found)) setPreflight({ data: found, mode: 'check' })
+      else toast({ title: 'Porteiras abertas', body: 'Nenhuma porta do plano está ocupada e os .env estão em dia. Pode tocar o berrante.', accent: 'green' })
     } catch (err) {
       toast({ title: 'Não deu para conferir', body: errorMessage(err), accent: 'red' })
     } finally {
@@ -251,8 +258,8 @@ export function ProjectPanel({ project }: { project: Project }) {
             <PixelButton size="lg" className="w-full !px-3 text-red" disabled={stopping || !anyActive} onClick={() => void stopAll()}>
               ■ <Term tech="Stop all: para processos (SIGTERM → SIGKILL no grupo) e containers da tropa">Recolher</Term>
             </PixelButton>
-            <PixelButton size="lg" className="w-full !px-3" disabled={checking || playing || !project.plan} onClick={() => void checkPorts()}>
-              ⌕ <Term tech="Port check: verifica se alguma porta que o plano vai usar já está ocupada por outro processo">{checking ? 'Conferindo…' : 'Conferir porteiras'}</Term>
+            <PixelButton size="lg" className="w-full whitespace-nowrap !px-3 !tracking-[0.08em]" disabled={checking || playing || !project.plan} onClick={() => void checkPorts()}>
+              ⌕ <Term tech="Preflight: verifica se alguma porta que o plano vai usar já está ocupada e se falta variável no .env">{checking ? 'Conferindo…' : 'Conferir porteiras'}</Term>
             </PixelButton>
             <Menu.Root>
               <Menu.Trigger asChild>

@@ -39,6 +39,21 @@ export interface PortConflict {
   command: string
 }
 
+/** Repositório com `.env` ausente ou com variáveis do exemplo faltando. */
+export interface EnvIssue {
+  repoId: string
+  repoName: string
+  exampleFile: string
+  envExists: boolean
+  missingKeys: string[]
+}
+
+/** Vistoria antes de tocar o berrante: portas ocupadas e `.env` incompletos. */
+export interface Preflight {
+  conflicts: PortConflict[]
+  env: EnvIssue[]
+}
+
 export interface StartResult {
   started: string[]
   skipped: string[]

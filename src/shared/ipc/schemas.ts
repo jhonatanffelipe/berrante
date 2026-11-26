@@ -110,8 +110,9 @@ export const ipcSchemas = {
   'startup:pickFolder': z.object({ projectId: id, defaultPath: absolutePath.optional() }),
 
   'runtime:get': z.object({ projectId: id }),
-  'runtime:checkConflicts': z.object({ projectId: id }),
-  'runtime:startAll': z.object({ projectId: id, ignoreConflicts: z.boolean().optional() }),
+  'runtime:checkConflicts': z.object({ projectId: id, profileId }),
+  'runtime:preflight': z.object({ projectId: id, profileId }),
+  'runtime:startAll': z.object({ projectId: id, ignoreConflicts: z.boolean().optional(), profileId }),
   'runtime:stopAll': z.object({ projectId: id }),
   'runtime:startService': z.object({ projectId: id, serviceId: id }),
   'runtime:stopService': z.object({ projectId: id, serviceId: id }),
