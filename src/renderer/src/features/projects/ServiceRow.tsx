@@ -17,7 +17,8 @@ import { LogViewer } from '../runtime/LogViewer'
 const stepLabel = (s: ServiceDefinition) => (s.kind === 'compose' ? 'container' : stepWaitFor(s) === 'exit' ? 'roda e termina' : 'fica de pé')
 
 interface Props {
-  index: number
+  /** Posição no play; ausente quando o serviço fica fora do play (só sobe pelo ▶). */
+  index?: number
   projectId: string
   service: ServiceDefinition
   state: RunningProcess | undefined
@@ -49,16 +50,22 @@ export function ServiceRow({ index, projectId, service, state, now, onOpenPort }
   const value = state?.ports.length ? `:${state.ports.join(' :')}` : state?.container ? (state.container.health ?? state.container.state) : state?.pid ? `pid ${state.pid}` : '—'
 
   return (
-    <div className={cn(!service.enabled && 'opacity-55')}>
+    <div>
       <div className="flex items-center gap-5 px-5 py-3.5">
-        <span className="w-6 font-mono text-[15px] text-comment">{String(index).padStart(2, '0')}</span>
+        {index !== undefined ? (
+          <span className="w-6 font-mono text-[15px] text-comment">{String(index).padStart(2, '0')}</span>
+        ) : (
+          <Tip label="Fora do play: não sobe com o projeto, só pelo ▶ desta linha">
+            <span className="w-6 font-mono text-[15px] text-line" aria-label="Fora do play">··</span>
+          </Tip>
+        )}
         <button className="min-w-0 flex-1 text-left" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
           <div className="flex flex-wrap items-center gap-2">
             <span className={cn('h-2.5 w-2.5 shrink-0 rounded-[1px]', accentBg[service.color])} />
             <span className="title truncate">{service.name}</span>
             <StatusBlock status={status} extra={active && state?.startedAt ? uptime(state.startedAt, now) : undefined} />
             <Badge>{stepLabel(service)}</Badge>
-            {!service.enabled ? <Badge>fora do play</Badge> : null}
+            {!service.enabled ? <Badge tone="orange">fora do play</Badge> : null}
             {service.autoRestart ? <Badge tone="cyan">reinicia sozinho</Badge> : null}
             {service.origin === 'ai' ? <Badge tone="purple">IA</Badge> : null}
           </div>

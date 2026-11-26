@@ -61,6 +61,8 @@ export function RepoCard({ project, repo, runtime, now, git, onAction, onOpenPor
   const actions = (project.plan?.actions ?? []).filter((a) => a.repoId === repo.id)
   const byId = new Map((runtime?.services ?? []).map((s) => [s.serviceId, s]))
   const playable = services.filter((s) => s.enabled && isLongRunning(s))
+  // Numera só o que entra no play: quem fica fora não ocupa posição na fila.
+  const playOrder = new Map(services.filter((s) => s.enabled).map((s, i) => [s.id, i + 1]))
   const running = playable.filter((s) => byId.get(s.id)?.status === 'running').length
 
   return (
@@ -91,8 +93,8 @@ export function RepoCard({ project, repo, runtime, now, git, onAction, onOpenPor
       </header>
       <div className="divide-y divide-line/50">
         {services.length === 0 ? <p className="px-5 py-4 text-comment">Nenhum serviço no plano para este repositório.</p> : null}
-        {services.map((s, i) => (
-          <ServiceRow key={s.id} index={i + 1} projectId={project.id} service={s} state={byId.get(s.id)} now={now} onOpenPort={onOpenPort} />
+        {services.map((s) => (
+          <ServiceRow key={s.id} index={s.enabled ? playOrder.get(s.id) : undefined} projectId={project.id} service={s} state={byId.get(s.id)} now={now} onOpenPort={onOpenPort} />
         ))}
       </div>
       {actions.length ? (
