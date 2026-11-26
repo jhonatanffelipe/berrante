@@ -4,7 +4,9 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 [SemVer](https://semver.org/lang/pt-BR/). Enquanto estiver em `0.x`, versões menores podem mudar o formato dos
 dados; quando isso acontecer, a nota da versão avisa.
 
-## [Não lançado]
+## [0.6.1] — 2026-11-26
+
+Correção da vistoria: cada porta aparece só no passo que a usa.
 
 ### Corrigido
 - **Vistoria acusava a mesma porta em vários passos:** o `PORT` do `.env` passou a valer para todo passo da pasta

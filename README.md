@@ -123,8 +123,8 @@ Baixe na página da [última versão](https://github.com/jhonatanffelipe/berrant
 
 | Sistema | Arquivo |
 |---|---|
-| macOS · Apple Silicon (M1 ou mais novo) | `Berrante-0.6.0-mac-arm64.dmg` |
-| macOS · Intel | `Berrante-0.6.0-mac-x64.dmg` |
+| macOS · Apple Silicon (M1 ou mais novo) | `Berrante-0.6.1-mac-arm64.dmg` |
+| macOS · Intel | `Berrante-0.6.1-mac-x64.dmg` |
 
 O app não é assinado, então o macOS pede uma confirmação na primeira abertura. O passo a passo, da instalação à
 primeira tropa de pé, está no **[guia de instalação](docs/guia-instalacao.md)**.
