@@ -45,6 +45,7 @@ export const IPC_CHANNELS = [
   'settings:setAiEnabled',
   'settings:pickCloneRoot',
   'settings:aiStatus',
+  'settings:wslStatus',
   'security:totpStatus',
   'security:totpBeginSetup',
   'security:totpConfirm',

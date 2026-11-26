@@ -59,6 +59,7 @@ export function buildHandlers(uc: UseCases): Handlers {
       return folder ? uc.updateSettings.execute({ cloneRoot: folder }) : uc.getSettings.execute()
     },
     'settings:aiStatus': () => uc.aiStatus.execute(),
+    'settings:wslStatus': () => uc.wslStatus.execute(),
 
     'security:totpStatus': () => uc.totpStatus.execute(),
     'security:totpBeginSetup': () => uc.totpBegin.execute(),

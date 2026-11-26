@@ -1,4 +1,4 @@
-import { resolve, sep } from 'node:path'
+import { resolve, sep } from 'node:path/posix'
 
 export function isInside(root: string, candidate: string): boolean {
   const r = resolve(root)

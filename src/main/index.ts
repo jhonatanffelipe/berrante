@@ -184,6 +184,8 @@ app.whenReady().then(async () => {
   installAboutPanel(app.isPackaged ? undefined : join(__dirname, '../../build/icon.png'))
   await refreshMenu(c)
   wireEvents(container)
+  // No Windows: resolve a distro WSL e o ambiente de login antes de re-adotar processos.
+  await container.initPlatform().catch((err) => container?.logger.error('platform.init.failed', { error: (err as Error).message }))
   await container.runtime.init().catch((err) => container?.logger.error('runtime.init.failed', { error: (err as Error).message }))
   container.logger.info('app.ready', { version: app.getVersion(), platform: process.platform })
 

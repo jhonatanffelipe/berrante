@@ -1,7 +1,7 @@
-import { execFile } from 'node:child_process'
+import { execFile, spawn } from 'node:child_process'
 import { access, constants } from 'node:fs/promises'
 import { delimiter, join } from 'node:path'
-import type { CommandResult, CommandRunner, RunOptions } from '@main/domain/ports'
+import type { CommandResult, CommandRunner, RunningCommand, RunOptions } from '@main/domain/ports'
 import type { ShellEnv } from './ShellEnv'
 
 /** Executa binários via argv (sem shell → sem injeção). */
@@ -22,6 +22,32 @@ export class NodeCommandRunner implements CommandRunner {
       )
       if (options.input !== undefined) child.stdin?.end(options.input)
     })
+  }
+
+  stream(file: string, args: string[], options: Omit<RunOptions, 'input' | 'timeoutMs'>, onData: (data: string) => void): RunningCommand {
+    let child: ReturnType<typeof spawn> | null = null
+    let killed = false
+    const done = this.shellEnv.resolve().then(
+      (base) =>
+        new Promise<number | null>((resolve) => {
+          if (killed) return resolve(null)
+          child = spawn(file, args, { cwd: options.cwd, env: { ...base, ...options.env }, windowsHide: true })
+          child.stdout?.on('data', (d: Buffer) => onData(d.toString('utf8')))
+          child.stderr?.on('data', (d: Buffer) => onData(d.toString('utf8')))
+          child.once('error', (err) => {
+            onData(`${err.message}\n`)
+            resolve(null)
+          })
+          child.once('exit', (code) => resolve(code))
+        })
+    )
+    return {
+      done,
+      kill: () => {
+        killed = true
+        child?.kill('SIGTERM')
+      }
+    }
   }
 
   async which(binary: string): Promise<string | null> {

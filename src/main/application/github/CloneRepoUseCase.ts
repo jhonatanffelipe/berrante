@@ -1,9 +1,7 @@
-import { existsSync } from 'node:fs'
-import { mkdir } from 'node:fs/promises'
-import { join, resolve, sep } from 'node:path'
+import { join, resolve, sep } from 'node:path/posix'
 import type { GitOperationResult } from '@shared/types'
 import type { LocalRepositoryRepository, SettingsRepository } from '@main/domain/repositories'
-import type { Clock, GitGateway, IdGenerator, Logger } from '@main/domain/ports'
+import type { Clock, GitGateway, IdGenerator, Logger, Workspace } from '@main/domain/ports'
 import { AppError } from '@main/domain/errors/AppError'
 import { LocalRepositoryEntity } from '@main/domain/entities/LocalRepository'
 import type { GithubSession } from '../auth/GithubSession'
@@ -18,7 +16,8 @@ export class CloneRepoUseCase {
     private readonly settings: SettingsRepository,
     private readonly ids: IdGenerator,
     private readonly clock: Clock,
-    private readonly logger: Logger
+    private readonly logger: Logger,
+    private readonly workspace: Workspace
   ) {}
 
   async execute(input: { fullName: string; subdir?: string }): Promise<GitOperationResult> {
@@ -30,9 +29,9 @@ export class CloneRepoUseCase {
     const base = resolve(cloneRoot, input.subdir ?? '')
     if (base !== cloneRoot && !base.startsWith(cloneRoot + sep)) throw AppError.validation('Subpasta fora da pasta raiz')
     const dest = join(base, meta.name)
-    if (existsSync(dest)) throw new AppError('CONFLICT', `Já existe uma pasta em ${dest}`)
+    if (await this.workspace.exists(dest)) throw new AppError('CONFLICT', `Já existe uma pasta em ${dest}`)
 
-    await mkdir(base, { recursive: true })
+    await this.workspace.mkdirp(base)
     const started = Date.now()
     // URL limpa (https://github.com/owner/repo.git): o token só vai pelo GIT_ASKPASS.
     const output = await this.git.clone(meta.cloneUrl, dest, token)

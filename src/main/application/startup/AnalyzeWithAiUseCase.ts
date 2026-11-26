@@ -1,4 +1,4 @@
-import { dirname, relative, resolve } from 'node:path'
+import { dirname, relative, resolve } from 'node:path/posix'
 import { z } from 'zod'
 import type { AiPlanSuggestion, LocalRepository, ServiceDefinition, StartupPlan } from '@shared/types'
 import type { LocalRepositoryRepository, ProjectRepository, SettingsRepository } from '@main/domain/repositories'

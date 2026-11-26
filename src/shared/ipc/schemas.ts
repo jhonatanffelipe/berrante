@@ -112,11 +112,19 @@ export const ipcSchemas = {
     accent: z.enum(ACCENT_NAMES).optional(),
     tintBackground: z.boolean().optional(),
     showGrid: z.boolean().optional(),
-    stopTimeoutMs: z.number().int().min(500).max(60_000).optional()
+    stopTimeoutMs: z.number().int().min(500).max(60_000).optional(),
+    wslDistro: z
+      .string()
+      .min(1)
+      .max(64)
+      .regex(/^[\w.\-]+$/, 'Nome de distro inválido')
+      .nullable()
+      .optional()
   }),
   'settings:setAiEnabled': z.object({ enabled: z.boolean(), totpCode: totpCode.optional() }),
   'settings:pickCloneRoot': none,
   'settings:aiStatus': none,
+  'settings:wslStatus': none,
 
   'security:totpStatus': none,
   'security:totpBeginSetup': none,

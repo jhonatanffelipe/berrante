@@ -5,7 +5,8 @@ import type {
   GithubRepo,
   GithubUser,
   PortBinding,
-  ServiceStatus
+  ServiceStatus,
+  WslStatus
 } from '@shared/types'
 
 // ---------- Sistema / plataforma ----------
@@ -23,13 +24,37 @@ export interface RunOptions {
   input?: string
 }
 
+/** Comando em execução com saída em fluxo (ex.: `docker compose up`, `logs -f`). */
+export interface RunningCommand {
+  /** Código de saída (null se terminou por sinal ou não conseguiu iniciar). */
+  done: Promise<number | null>
+  kill(): void
+}
+
 /**
- * Executa binários sem shell (argv). Implementação darwin/linux hoje;
- * no Windows um WslCommandRunner prefixa `wsl.exe -d <distro> --`.
+ * Executa binários sem shell (argv). No macOS/Linux roda direto; no Windows o `WslCommandRunner`
+ * executa dentro da distro (`wsl.exe -d <distro> --exec …`).
  */
 export interface CommandRunner {
   run(file: string, args: string[], options?: RunOptions): Promise<CommandResult>
+  stream(file: string, args: string[], options: Omit<RunOptions, 'input' | 'timeoutMs'>, onData: (data: string) => void): RunningCommand
   which(binary: string): Promise<string | null>
+}
+
+/**
+ * Onde os repositórios vivem. No macOS/Linux é o próprio sistema; no Windows é a distro WSL:
+ * os caminhos guardados são Linux (`/home/…`) e o "host" é o caminho UNC (`\\wsl.localhost\<distro>\…`).
+ */
+export interface Workspace {
+  /** Caminho que o Node/Explorer do host consegue abrir. */
+  toHost(path: string): string
+  /** Converte um caminho do host (ex.: diálogo de pasta) para o caminho do workspace, ou null se não houver. */
+  fromHost(hostPath: string): string | null
+  exists(path: string): Promise<boolean>
+  isDirectory(path: string): Promise<boolean>
+  mkdirp(path: string): Promise<void>
+  /** Pasta pessoal dentro do workspace (padrão da pasta de clones). */
+  home(): Promise<string>
 }
 
 export interface Logger {
@@ -104,7 +129,7 @@ export interface ProcessManagerGateway {
 }
 
 export interface ProcessKiller {
-  isAlive(pid: number): boolean
+  isAlive(pid: number): Promise<boolean>
   /** SIGTERM e SIGKILL após timeout. */
   kill(pid: number, timeoutMs: number): Promise<void>
 }
@@ -168,7 +193,7 @@ export interface LocalCloneScanner {
 // ---------- IA ----------
 
 export interface AiCliGateway {
-  path(cli: AiCliName): string
+  path(cli: AiCliName): Promise<string>
   available(cli: AiCliName): Promise<boolean>
   /** Executa em modo não interativo e devolve o JSON bruto produzido pelo modelo. */
   requestJson(cli: AiCliName, prompt: string, schema: object, cwd: string): Promise<unknown>
@@ -187,6 +212,11 @@ export interface TotpGateway {
 export interface Hasher {
   hash(value: string): string
   randomToken(bytes: number): string
+}
+
+/** Diagnóstico do ambiente WSL (Windows); nos outros sistemas devolve `supported: false`. */
+export interface WslStatusGateway {
+  status(): Promise<WslStatus>
 }
 
 // ---------- UI do SO ----------
