@@ -4,6 +4,24 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 [SemVer](https://semver.org/lang/pt-BR/). Enquanto estiver em `0.x`, versões menores podem mudar o formato dos
 dados; quando isso acontecer, a nota da versão avisa.
 
+## [Não lançado]
+
+O Berrante chega ao Windows (x64 e ARM64), sem mudar nada no macOS.
+
+### Adicionado
+- **Windows 10/11:** instaladores `.exe` (NSIS, por usuário) e `.zip` para x64 e arm64 (`yarn dist:win`). Sem 32 bits: o Electron não publica mais essa build.
+- Os passos rodam no **Git Bash** do Git for Windows, com os mesmos comandos do macOS; sem ele, no Prompt de Comando.
+- **Recolher no Windows:** a árvore de processos de cada serviço é encerrada com `taskkill /T /F`.
+- **Contar a boiada no Windows:** portas pelo `netstat` e processos pelo PowerShell (`Win32_Process`), com a tropa
+  dona de cada porta.
+- **Terminal no Windows:** Windows Terminal (padrão), PowerShell, Prompt de Comando ou Git Bash.
+- **VS Code no Windows:** abre o `Code.exe` da instalação do usuário ou do sistema.
+- Ícone azul na área de notificação, menus Arquivo/…/Ajuda na janela e atalhos com `Ctrl`.
+- Aviso ao abrir a versão x64 num Windows ARM.
+
+### Alterado
+- Atalhos do menu passam a ser `CmdOrCtrl` (no macOS continuam `⌘`).
+
 ## [0.6.2] — 2026-11-26
 
 Serviço fora do play deixa de aparecer apagado no painel.

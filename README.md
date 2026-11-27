@@ -9,6 +9,7 @@ de preparo e scripts de dev na ordem certa, com um clique.
 
 [![Release](https://img.shields.io/github/v/release/jhonatanffelipe/berrante?color=2f8cff&label=vers%C3%A3o)](https://github.com/jhonatanffelipe/berrante/releases/latest)
 ![macOS](https://img.shields.io/badge/macOS-000000?logo=apple&logoColor=white)
+![Windows](https://img.shields.io/badge/Windows-0078D4?logo=windows&logoColor=white)
 ![Electron](https://img.shields.io/badge/Electron-2B2E3A?logo=electron&logoColor=9FEAF9)
 
 [**Baixar**](https://github.com/jhonatanffelipe/berrante/releases/latest) ·
@@ -29,12 +30,13 @@ de preparo e scripts de dev na ordem certa, com um clique.
 - **Detectado sozinho:** o Berrante lê o lockfile, o `docker-compose.yml`, os scripts do `package.json`, o README e o
   `.env.example` e monta rede → containers → API → workers → front-end. Re-detectar preserva o que você mudou.
 - **Tocar o berrante:** sobe tudo na ordem, mostra quantos processos estão de pé, portas, tempo rodando e log ao
-  vivo de cada um. **Recolher a boiada** para tudo de forma limpa (`SIGTERM` → `SIGKILL` e `docker compose stop`).
+  vivo de cada um. **Recolher a boiada** para tudo de forma limpa (`SIGTERM` → `SIGKILL` no macOS, a árvore de
+  processos no Windows, e `docker compose stop`).
 - **Fecha sem derrubar:** ao sair, escolha entre recolher ou manter rodando; na próxima abertura o Berrante reconhece
   os processos que ficaram de pé.
 - **Curral:** todos os containers Docker da máquina, com a tropa dona de cada um; pare, suba ou reinicie de dentro
   do Berrante. Na tropa, a aba **Containers** mostra o que os passos `docker compose … up` sobem, serviço a serviço.
-- **VS Code a um clique:** cada tropa pode apontar para um `.code-workspace`; **Abrir no VS Code**, no menu **⋮ Mais** da tropa (ou `⌘O`), abre ele.
+- **VS Code a um clique:** cada tropa pode apontar para um `.code-workspace`; **Abrir no VS Code**, no menu **⋮ Mais** da tropa (ou `⌘O` / `Ctrl+O`), abre ele.
 - **Contar a boiada:** todas as portas abertas da máquina, com PID, comando e de qual tropa é. Avisa antes de subir
   se alguma porta já estiver ocupada.
 - **Git da tropa:** branch, alterações e commits à frente/atrás de cada repo; **pull** em todos de uma vez e
@@ -43,8 +45,8 @@ de preparo e scripts de dev na ordem certa, com um clique.
   completar o `.env` e para **mudar a porta** por uma livre (na máquina e em todas as tropas) direto no `.env`.
 - **Perfis, healthcheck e reinício automático:** suba só parte da tropa, espere uma URL `/health` responder e deixe o
   serviço que cair subir sozinho de novo.
-- **Barra de menu e avisos:** toque e recolha tropas pelo ícone na barra de menu e receba avisos do macOS quando a
-  boiada subir ou um serviço cair.
+- **Barra de menu e avisos:** toque e recolha tropas pelo ícone na barra de menus (macOS) ou na área de notificação
+  (Windows) e receba avisos do sistema quando a boiada subir ou um serviço cair.
 - **Atalhos do dia a dia:** porta abre no navegador, `>_` abre o terminal na pasta, log com busca, próximo erro e
   copiar.
 - **GitHub integrado:** login pelo `gh` ou por código, lista, clone (vários de uma vez) e pull, com o token guardado cifrado.
@@ -125,14 +127,20 @@ Baixe na página da [última versão](https://github.com/jhonatanffelipe/berrant
 |---|---|
 | macOS · Apple Silicon (M1 ou mais novo) | `Berrante-0.6.2-mac-arm64.dmg` |
 | macOS · Intel | `Berrante-0.6.2-mac-x64.dmg` |
+| Windows 10/11 · x64 (Intel/AMD) | `Berrante-<versão>-win-x64.exe` |
+| Windows 10/11 · ARM (Snapdragon) | `Berrante-<versão>-win-arm64.exe` |
 
-O app não é assinado, então o macOS pede uma confirmação na primeira abertura. O passo a passo, da instalação à
+Os instaladores do Windows saem a partir da próxima versão. O app não é assinado, então o macOS (e o SmartScreen,
+no Windows) pede uma confirmação na primeira abertura. O passo a passo, da instalação à
 primeira tropa de pé, está no **[guia de instalação](docs/guia-instalacao.md)**.
 
-> **Só macOS, por enquanto.** As primeiras versões do Berrante rodam apenas no macOS 12 ou mais novo (Apple Silicon
-> e Intel). Windows e Linux não são suportados.
+> **macOS e Windows.** O Berrante roda no macOS 12 ou mais novo (Apple Silicon e Intel) e no Windows 10/11 (x64 e ARM64;
+> o Electron não tem mais versão 32 bits). No Windows ele precisa do [Git for Windows](https://git-scm.com/download/win): os passos rodam no Git
+> Bash, com os mesmos comandos do macOS. Linux não é suportado.
 
 ## ⌨️ Atalhos
+
+No Windows, troque `⌘` por `Ctrl` e `⌥` por `Alt` (ex.: `Ctrl+N`, `Ctrl+Shift+Enter`, `Ctrl+Alt+1`).
 
 | Atalho | Ação |
 |---|---|
@@ -169,6 +177,7 @@ cp config/.env.example config/.env   # BERRANTE_GITHUB_CLIENT_ID para o login po
 yarn dev                             # app com HMR
 yarn test                            # vitest
 yarn dist                            # .dmg e .zip do macOS (arm64 e x64) em release/<versão>/
+yarn dist:win                        # instaladores .exe e .zip do Windows (x64 e arm64)
 ```
 
 Arquitetura, decisões de segurança, testes e como montar uma versão: **[docs/desenvolvimento.md](docs/desenvolvimento.md)**.

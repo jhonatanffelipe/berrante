@@ -82,6 +82,12 @@ describe('ownersOf', () => {
     expect(ownersOf('/repos/api-old', [project([])], repos)).toEqual([])
     expect(ownersOf(null, [project([])], repos)).toEqual([])
   })
+  it('no Windows compara sem diferenciar maiúsculas e aceita / ou \\', () => {
+    const win = new Map([['api', 'C:\\Users\\dev\\www\\api']])
+    expect(ownersOf('c:\\users\\dev\\www\\api\\infra', [project([])], win)).toHaveLength(1)
+    expect(ownersOf('C:/Users/dev/www/api', [project([])], win)).toHaveLength(1)
+    expect(ownersOf('C:\\Users\\dev\\www\\api-old', [project([])], win)).toEqual([])
+  })
 })
 
 describe('docker ps', () => {

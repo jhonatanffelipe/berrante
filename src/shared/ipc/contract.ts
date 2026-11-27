@@ -132,4 +132,6 @@ export type PlanForSave = StartupPlan
 export interface BerranteApi {
   invoke<C extends IpcChannel>(channel: C, ...args: undefined extends IpcInput<C> ? [input?: IpcInput<C>] : [input: IpcInput<C>]): Promise<IpcEnvelope<IpcOutput<C>>>
   on<E extends IpcEventName>(event: E, listener: (payload: IpcEvents[E]) => void): () => void
+  /** process.platform do main ("darwin", "win32"): textos e atalhos mudam por sistema. */
+  platform: string
 }

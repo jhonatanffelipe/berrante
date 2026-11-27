@@ -30,3 +30,23 @@ dmg:
   contents:
     - { x: 140, y: 180 }
     - { x: 400, y: 180, type: link, path: /Applications }
+win:
+  icon: build/icon.png
+  artifactName: ${productName}-${version}-win-${arch}.${ext}
+  # x64 (Intel/AMD 64 bits) e arm64 (Snapdragon/Windows on ARM). Sem ia32: o Electron não publica mais build
+  # Windows 32 bits (electron-v45.x-win32-ia32.zip não existe).
+  # Sem certificado de assinatura: o SmartScreen avisa na primeira abertura. Veja o guia de instalação.
+  target:
+    - target: nsis
+      arch: [x64, arm64]
+    - target: zip
+      arch: [x64, arm64]
+nsis:
+  # Um instalador por arquitetura (o universal juntaria as duas num arquivo só, bem maior).
+  buildUniversalInstaller: false
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Berrante

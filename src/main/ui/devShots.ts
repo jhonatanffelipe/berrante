@@ -1,4 +1,4 @@
-import { app, type BrowserWindow } from 'electron'
+import { app, clipboard, type BrowserWindow } from 'electron'
 import { execFileSync, spawn } from 'node:child_process'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
@@ -98,13 +98,17 @@ export async function runDevShots(win: BrowserWindow, dir: string, send: (c: Men
 
   // Botão "Copiar": a escrita na área de transferência precisa ser permitida pelo processo principal.
   // Conferência pelo pbpaste/pbcopy (macOS): a leitura do clipboard pelo processo principal não é confiável aqui.
-  const previous = execFileSync('pbpaste').toString()
+  // No Windows não há pbpaste: usa o clipboard do Electron.
+  const isMac = process.platform === 'darwin'
+  const paste = async (): Promise<string> => (isMac ? execFileSync('pbpaste').toString() : await clipboard.readText())
+  const previous = await paste()
   win.focus()
   const probe = `berrante-clipboard-${Date.now()}`
   const error = await js<string | null>(`navigator.clipboard.writeText(${JSON.stringify(probe)}).then(() => null, (e) => String(e))`)
   await wait(300)
-  const copied = execFileSync('pbpaste').toString() === probe
-  execFileSync('pbcopy', { input: previous })
+  const copied = (await paste()) === probe
+  if (isMac) execFileSync('pbcopy', { input: previous })
+  else clipboard.writeText(previous)
   await writeFile(join(dir, 'clipboard.json'), JSON.stringify({ copied, error }, null, 2))
 
   await stopEverything()

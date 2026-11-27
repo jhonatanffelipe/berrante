@@ -204,8 +204,10 @@ write(join(data, 'settings.json'), JSON.stringify({ cloneRoot: repos, accent: 'a
 write(join(out, 'outro-projeto/server.js'), `require('node:http').createServer((_q, r) => r.end('outro')).listen(${PORTS.api}, '127.0.0.1')\n`)
 
 console.log(`demo pronta em ${out}; gerando prints em ${shots}…`)
+// No Windows o yarn é um .cmd: só roda pelo shell.
 execFileSync('yarn', ['dev'], {
   cwd: root,
+  shell: process.platform === 'win32',
   stdio: 'inherit',
   env: {
     ...process.env,

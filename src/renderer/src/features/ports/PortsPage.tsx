@@ -14,6 +14,7 @@ import { useTotp } from '../security/TotpProvider'
 import { PageTitle } from '../../components/ui/PageTitle'
 import { PixelDigits } from '../../components/ui/PixelDigits'
 import { useAppData } from '../layout/AppData'
+import { isWindows } from '../../lib/platform'
 
 type OwnerFilter = 'all' | 'berrante' | 'others'
 
@@ -70,7 +71,11 @@ export function PortsPage() {
     <div className="mx-auto max-w-6xl space-y-4">
       <PageTitle index="P" title="Contar a boiada">
         <span className="label-muted">
-          <Term tech="Portas TCP em LISTEN (lsof) + processo (ps): porta, PID, comando, usuário, cwd">lsof · ps · a cada 2s</Term>
+          {isWindows ? (
+            <Term tech="Portas TCP em LISTEN (netstat) + processo (Win32_Process): porta, PID, comando, usuário">netstat · PowerShell · a cada 2s</Term>
+          ) : (
+            <Term tech="Portas TCP em LISTEN (lsof) + processo (ps): porta, PID, comando, usuário, cwd">lsof · ps · a cada 2s</Term>
+          )}
         </span>
       </PageTitle>
       <PixelBlock className="flex flex-wrap items-end gap-8 px-6 py-5">
@@ -144,7 +149,7 @@ export function PortsPage() {
       </PixelBlock>
 
       <Dialog open={target !== null} onOpenChange={(o) => !o && setTarget(null)} title={`Matar PID ${target?.pid ?? ''}?`} accent="red" width="max-w-md"
-        description={target?.owner ? `É o serviço "${target.owner.serviceName}" da tropa ${target.owner.projectName}: o grupo inteiro recebe SIGTERM e depois SIGKILL.` : 'Processo de fora do Berrante: SIGTERM e, se não sair, SIGKILL. Exige 2FA.'}>
+        description={target?.owner ? `É o serviço "${target.owner.serviceName}" da tropa ${target.owner.projectName}: ${isWindows ? 'a árvore inteira é encerrada (taskkill).' : 'o grupo inteiro recebe SIGTERM e depois SIGKILL.'}` : isWindows ? 'Processo de fora do Berrante: é encerrado na hora. Exige 2FA.' : 'Processo de fora do Berrante: SIGTERM e, se não sair, SIGKILL. Exige 2FA.'}>
         <p className="selectable mb-4 break-all bg-darker p-3 text-xs">{target?.fullCommand ?? target?.command}</p>
         <div className="flex justify-end gap-2">
           <PixelButton onClick={() => setTarget(null)}>Cancelar</PixelButton>

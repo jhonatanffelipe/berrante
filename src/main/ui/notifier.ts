@@ -3,7 +3,7 @@ import type { RuntimeEvent } from '../application/runtime/RuntimeService'
 
 const seconds = (ms: number) => (ms < 60_000 ? `${Math.round(ms / 1000)}s` : `${Math.floor(ms / 60_000)}min ${Math.round((ms % 60_000) / 1000)}s`)
 
-/** Texto do aviso do macOS para cada evento da boiada. */
+/** Texto do aviso do sistema (macOS ou Windows) para cada evento da boiada. */
 export function notificationFor(event: RuntimeEvent): { title: string; body: string } {
   switch (event.type) {
     case 'played':

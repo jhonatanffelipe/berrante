@@ -59,7 +59,7 @@ export const DEFAULT_SETTINGS = (): Settings => ({
   tintBackground: true,
   showGrid: true,
   notifications: true,
-  terminalApp: 'Terminal',
+  terminalApp: process.platform === 'win32' ? 'Windows Terminal' : 'Terminal',
   stopTimeoutMs: 5000
 })
 

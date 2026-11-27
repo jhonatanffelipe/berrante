@@ -14,6 +14,7 @@ import { useAppData } from '../layout/AppData'
 import { PageTitle } from '../../components/ui/PageTitle'
 import { Badge } from '../../components/ui/Badge'
 import { LoginCard } from '../auth/LoginCard'
+import { isMac } from '../../lib/platform'
 
 const PER_PAGE = 25
 
@@ -233,7 +234,7 @@ function LocalTab() {
   return (
     <div className="space-y-4 pt-4">
       <div className="flex gap-3">
-        <PixelButton accent="accent" onClick={() => void importFolder()} disabled={busy === 'import'} title="⌘-clique no diálogo para escolher várias">Importar pastas locais</PixelButton>
+        <PixelButton accent="accent" onClick={() => void importFolder()} disabled={busy === 'import'} title={`${isMac ? '⌘' : 'Ctrl'}-clique no diálogo para escolher várias`}>Importar pastas locais</PixelButton>
       </div>
       {repos.length === 0 ? (
         <EmptyState title="Nenhum repositório local">Clone do GitHub ou importe uma pasta que já existe na sua máquina.</EmptyState>

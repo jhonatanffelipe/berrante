@@ -16,7 +16,8 @@ const api: BerranteApi = {
     const wrapped = (_e: IpcRendererEvent, payload: unknown) => listener(payload as never)
     ipcRenderer.on(event as IpcEventName, wrapped)
     return () => ipcRenderer.removeListener(event, wrapped)
-  }
+  },
+  platform: process.platform
 }
 
 contextBridge.exposeInMainWorld('berrante', api)

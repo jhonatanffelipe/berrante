@@ -45,7 +45,8 @@ export class AiCliAdapter implements AiCliGateway {
   ) {}
 
   path(cli: AiCliName): string {
-    return join(this.binDir, cli)
+    // No Windows o instalador nativo grava claude.exe em %USERPROFILE%\.local\bin.
+    return join(this.binDir, process.platform === 'win32' ? `${cli}.exe` : cli)
   }
 
   async available(cli: AiCliName): Promise<boolean> {

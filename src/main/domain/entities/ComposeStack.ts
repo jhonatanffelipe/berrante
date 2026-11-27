@@ -44,7 +44,15 @@ export function stacksOf(project: Project): ComposeStack[] {
 /** Tropas donas de um container: a pasta do compose dele fica dentro de um repo da tropa. */
 export function ownersOf(workingDir: string | null, projects: Project[], repoPaths: Map<string, string>): ContainerOwner[] {
   if (!workingDir) return []
-  const inside = (root: string) => workingDir === root || workingDir.startsWith(root.endsWith('/') ? root : `${root}/`)
+  // No Windows o docker grava a pasta como C:\… e o caminho não diferencia maiúsculas.
+  const windows = /^[a-zA-Z]:[\\/]/.test(workingDir)
+  const norm = (p: string) => (windows ? p.replace(/\//g, '\\').toLowerCase() : p)
+  const sep = windows ? '\\' : '/'
+  const dir = norm(workingDir)
+  const inside = (repoPath: string) => {
+    const root = norm(repoPath)
+    return dir === root || dir.startsWith(root.endsWith(sep) ? root : `${root}${sep}`)
+  }
   return projects
     .filter((p) => p.repositoryIds.some((id) => {
       const path = repoPaths.get(id)

@@ -10,6 +10,7 @@ import { PixelButton } from '../../components/ui/PixelButton'
 import { Tetromino } from '../../components/ui/Tetromino'
 import { useToast } from '../../components/ui/Toast'
 import { useAppData } from '../layout/AppData'
+import { MOD } from '../../lib/platform'
 
 interface Props {
   open: boolean
@@ -119,7 +120,7 @@ export function ProjectFormDialog({ open, onOpenChange, project }: Props) {
             })}
           </div>
         </Field>
-        <Field label="Workspace do VS Code" hint="Arquivo .code-workspace aberto pelo botão VS Code da tropa (⌘O).">
+        <Field label="Workspace do VS Code" hint={`Arquivo .code-workspace aberto pelo botão VS Code da tropa (${MOD}O).`}>
           <div className="flex items-center gap-2">
             <span className={cn('pixel-input flex-1 truncate font-mono text-xs', !workspaceFile && 'text-comment')} title={workspaceFile ?? ''}>
               {workspaceFile ? shortPath(workspaceFile) : 'nenhum'}

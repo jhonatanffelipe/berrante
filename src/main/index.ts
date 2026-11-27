@@ -14,6 +14,8 @@ import { notificationFor, notify } from './ui/notifier'
 import type { MenuCommand } from '@shared/menu'
 
 const DEV_URL = process.env.ELECTRON_RENDERER_URL
+const isMac = process.platform === 'darwin'
+const isWindows = process.platform === 'win32'
 
 let mainWindow: BrowserWindow | null = null
 let container: Container | null = null
@@ -44,8 +46,8 @@ function createWindow(settings: Settings): BrowserWindow {
     title: 'Berrante',
     // Cor nativa antes do CSS carregar: o mesmo fundo tingido do tema.
     backgroundColor: windowBackground(settings.accent, settings.tintBackground),
-    titleBarStyle: 'hiddenInset',
-    trafficLightPosition: { x: 14, y: 14 },
+    // macOS: barra de título embutida com os semáforos. Windows: moldura padrão, com o menu na janela.
+    ...(isMac ? { titleBarStyle: 'hiddenInset' as const, trafficLightPosition: { x: 14, y: 14 } } : {}),
     icon: join(__dirname, '../../build/icon.png'),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
@@ -102,7 +104,7 @@ function wireEvents(c: Container): void {
     mainWindow?.webContents.send('runtime:status', rt)
     scheduleTray(c)
   })
-  // Avisos do macOS só quando a janela não está em foco (na janela, o painel já mostra tudo).
+  // Avisos do sistema só quando a janela não está em foco (na janela, o painel já mostra tudo).
   c.runtime.onEvent((event) => {
     scheduleTray(c)
     void c.useCases.getSettings.execute().then((s) => {
@@ -209,6 +211,8 @@ async function confirmQuit(c: Container): Promise<'keep' | 'stop' | 'cancel'> {
 }
 
 app.setName('Berrante')
+// Windows: sem o AppUserModelID as notificações não aparecem (e o app não se agrupa direito na barra de tarefas).
+if (isWindows) app.setAppUserModelId('dev.berrante.app')
 // Só em dev: pasta de dados alternativa (ex.: dados de demonstração para os prints do README).
 if (!app.isPackaged && process.env.BERRANTE_USER_DATA) app.setPath('userData', process.env.BERRANTE_USER_DATA)
 
@@ -218,14 +222,21 @@ if (!gotLock) app.quit()
 app.on('second-instance', () => {
   if (mainWindow) {
     if (mainWindow.isMinimized()) mainWindow.restore()
+    if (!isMac) mainWindow.show()
     mainWindow.focus()
+  } else if (!isMac) {
+    // Windows: sem Dock, abrir o atalho de novo é o jeito de trazer a janela fechada de volta.
+    void container?.useCases.getSettings.execute().then((s) => {
+      mainWindow = createWindow(s)
+      mainWindow.on('closed', () => (mainWindow = null))
+    })
   }
 })
 
 app.whenReady().then(async () => {
-  // Por enquanto o Berrante só roda no macOS (lsof/ps, shell de login, Keychain).
-  if (process.platform !== 'darwin') {
-    dialog.showErrorBox('Berrante', 'Esta versão do Berrante funciona apenas no macOS.')
+  // macOS e Windows: cada sistema tem seus adapters no container (portas, terminal, editor, processos).
+  if (!isMac && !isWindows) {
+    dialog.showErrorBox('Berrante', 'Esta versão do Berrante funciona apenas no macOS e no Windows.')
     app.exit(1)
     return
   }
@@ -300,5 +311,6 @@ app.on('before-quit', (event) => {
   })()
 })
 
-// macOS: fechar a última janela não encerra o app (reabre pelo Dock, via 'activate').
+// Fechar a última janela não encerra o app: a boiada segue no pasto e o Berrante fica na barra de menus (macOS) ou
+// na área de notificação (Windows). Reabre pelo Dock ('activate'), pelo ícone da bandeja ou abrindo o app de novo.
 app.on('window-all-closed', () => undefined)

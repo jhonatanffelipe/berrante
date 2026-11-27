@@ -1,8 +1,11 @@
 import type { Project, ProjectInput, StartupPlan } from '@shared/types'
 import { AppError } from '../errors/AppError'
 
+/** Caminho absoluto: /… no macOS, C:\… ou \\servidor\… no Windows. */
+const isAbsolutePath = (path: string): boolean => path.startsWith('/') || /^[a-zA-Z]:[\\/]/.test(path) || path.startsWith('\\\\')
+
 /** Caminho absoluto de um `.code-workspace` (o arquivo em si é conferido no disco pelo EditorGateway). */
-export const isWorkspaceFile = (path: string): boolean => path.startsWith('/') && path.endsWith('.code-workspace')
+export const isWorkspaceFile = (path: string): boolean => isAbsolutePath(path) && path.endsWith('.code-workspace')
 
 export const ProjectEntity = {
   create(input: ProjectInput, id: string, now: Date): Project {

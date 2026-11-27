@@ -9,11 +9,17 @@ export function uptime(startedAt: string | null, now = Date.now()): string {
 
 /** Troca todas as pastas de usuário de um texto (ex.: comando com vários caminhos) por `~`. */
 export function shortPaths(text: string): string {
-  return text.replace(/\/Users\/[^/\s]+/g, '~').replace(/\/home\/[^/\s]+/g, '~')
+  return text
+    .replace(/\/Users\/[^/\s]+/g, '~')
+    .replace(/\/home\/[^/\s]+/g, '~')
+    .replace(/\b[A-Za-z]:\\Users\\[^\\\s]+/gi, '~')
 }
 
 export function shortPath(path: string): string {
-  return path.replace(/^\/Users\/[^/]+/, '~').replace(/^\/home\/[^/]+/, '~')
+  return path
+    .replace(/^\/Users\/[^/]+/, '~')
+    .replace(/^\/home\/[^/]+/, '~')
+    .replace(/^[A-Za-z]:\\Users\\[^\\]+/i, '~')
 }
 
 /** Duração curta: "42s", "1min 05s". */

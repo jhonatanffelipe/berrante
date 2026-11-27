@@ -11,14 +11,18 @@ export interface Settings {
   accent: AccentName
   tintBackground: boolean
   showGrid: boolean
-  /** Avisos do macOS quando a boiada sobe, um passo falha ou um serviço cai. */
+  /** Avisos do sistema quando a boiada sobe, um passo falha ou um serviço cai. */
   notifications: boolean
   /** App usado em "Abrir terminal na pasta". */
   terminalApp: TerminalApp
   stopTimeoutMs: number
 }
 
-export const TERMINAL_APPS = ['Terminal', 'iTerm', 'Warp', 'Ghostty'] as const
+export const MAC_TERMINAL_APPS = ['Terminal', 'iTerm', 'Warp', 'Ghostty'] as const
+export const WINDOWS_TERMINAL_APPS = ['Windows Terminal', 'PowerShell', 'Prompt de Comando', 'Git Bash'] as const
+export const TERMINAL_APPS = [...MAC_TERMINAL_APPS, ...WINDOWS_TERMINAL_APPS] as const
+/** Terminais oferecidos nas configurações em cada sistema. */
+export const terminalAppsFor = (platform: string): readonly TerminalApp[] => (platform === 'win32' ? WINDOWS_TERMINAL_APPS : MAC_TERMINAL_APPS)
 export type TerminalApp = (typeof TERMINAL_APPS)[number]
 
 export interface TotpStatus {

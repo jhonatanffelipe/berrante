@@ -30,6 +30,7 @@ import { useProjectGit } from './useProjectGit'
 import { BranchDialog } from './BranchDialog'
 import { GitResultsDialog } from './GitResultsDialog'
 import { PreflightDialog } from './PreflightDialog'
+import { MOD } from '../../lib/platform'
 
 const PROFILE_KEY = (projectId: string) => `berrante.profile.${projectId}`
 
@@ -301,7 +302,7 @@ export function ProjectPanel({ project }: { project: Project }) {
                 <Menu.Content align="end" sideOffset={6} className="z-50 min-w-48 rounded border border-line bg-deep p-1 shadow-lg">
                   {project.workspaceFile ? (
                     <Menu.Item onSelect={() => void openWorkspace()} className="flex cursor-pointer items-center justify-between gap-4 rounded-sm px-3 py-2 outline-none data-[highlighted]:bg-line">
-                      Abrir no VS Code <span className="font-mono text-[11px] text-comment">⌘O</span>
+                      Abrir no VS Code <span className="font-mono text-[11px] text-comment">{MOD}O</span>
                     </Menu.Item>
                   ) : null}
                   <Menu.Item disabled={pulling} onSelect={() => void pullAll()} className="cursor-pointer rounded-sm px-3 py-2 outline-none data-[disabled]:opacity-40 data-[highlighted]:bg-line">

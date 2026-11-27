@@ -120,7 +120,7 @@ export class DockerCliAdapter implements DockerGateway {
   async composeUp(cwd: string, file: string, services: string[], onOutput: (data: string) => void): Promise<void> {
     const env = await this.shellEnv.resolve()
     await new Promise<void>((resolve, reject) => {
-      const child = spawn('docker', ['compose', '-f', file, 'up', '-d', ...services], { cwd, env })
+      const child = spawn('docker', ['compose', '-f', file, 'up', '-d', ...services], { cwd, env, windowsHide: true })
       child.stdout.on('data', (d: Buffer) => onOutput(d.toString('utf8')))
       child.stderr.on('data', (d: Buffer) => onOutput(d.toString('utf8')))
       child.once('error', (err) => reject(new AppError('DOCKER', `docker indisponível: ${err.message}`)))
@@ -148,7 +148,7 @@ export class DockerCliAdapter implements DockerGateway {
     let child: ReturnType<typeof spawn> | null = null
     void this.shellEnv.resolve().then((env) => {
       if (stopped) return
-      child = spawn('docker', ['compose', '-f', file, 'logs', '-f', '--no-log-prefix', '--tail', '200', service], { cwd, env: { ...env, FORCE_COLOR: '1' } })
+      child = spawn('docker', ['compose', '-f', file, 'logs', '-f', '--no-log-prefix', '--tail', '200', service], { cwd, env: { ...env, FORCE_COLOR: '1' }, windowsHide: true })
       child.stdout?.on('data', (d: Buffer) => onData(d.toString('utf8')))
       child.stderr?.on('data', (d: Buffer) => onData(d.toString('utf8')))
       child.on('error', () => undefined)

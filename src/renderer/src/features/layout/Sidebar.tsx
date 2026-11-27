@@ -8,6 +8,7 @@ import { useMenuCommand } from '../../lib/useMenuCommand'
 import { useAppData, type View } from './AppData'
 import { useRuntimeCtx } from '../runtime/RuntimeProvider'
 import { ProjectFormDialog } from '../projects/ProjectFormDialog'
+import { isWindows } from '../../lib/platform'
 
 /** Card de navegação: índice em mono, rótulo e um ponto de estado no canto. */
 function NavCard({ index, active, dot, onClick, children }: { index: string; active: boolean; dot?: 'accent' | 'green' | 'yellow' | 'off'; onClick: () => void; children: ReactNode }) {
@@ -76,7 +77,7 @@ export function Sidebar() {
           Repositórios
         </NavCard>
         <NavCard index="P" active={is('ports')} onClick={() => go({ name: 'ports' })}>
-          <Term tech="Portas TCP em LISTEN e PIDs (lsof + ps)" side="right">
+          <Term tech={isWindows ? 'Portas TCP em LISTEN e PIDs (netstat + PowerShell)' : 'Portas TCP em LISTEN e PIDs (lsof + ps)'} side="right">
             Contar a boiada
           </Term>
         </NavCard>

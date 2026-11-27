@@ -6,7 +6,9 @@ Como rodar, testar, empacotar e como o app é organizado por dentro. Para instal
 ## Ambiente
 
 Requisitos: Node 24 (`.nvmrc`), Yarn 1.22 e Docker Desktop (opcional, só para compose). O `gh` CLI também é
-opcional e serve de atalho de login.
+opcional e serve de atalho de login. No Windows, também o Git for Windows (o Berrante roda os passos no Git Bash).
+
+Dá para desenvolver no macOS ou no Windows: `yarn dev`, `yarn test` e `yarn typecheck` funcionam nos dois.
 
 ```bash
 yarn install            # baixa o Electron e prepara deps nativas
@@ -40,11 +42,17 @@ aceita.
 | `yarn build` | typecheck + bundle em `out/` |
 | `yarn dist` | build + `.dmg` e `.zip` do macOS (arm64 e x64) em `release/<versão>/` |
 | `yarn dist:dir` | build + `.app` sem empacotar (mais rápido para testar) |
+| `yarn dist:win` | build + instaladores NSIS (`.exe`) e `.zip` do Windows (x64 e arm64) em `release/<versão>/` |
+| `yarn dist:win:dir` | build + app do Windows x64 sem empacotar, em `release/<versão>/win-unpacked` |
 | `yarn icon` | regenera `build/icon.png` e `resources/icon.png` (peça "cadeirinha" do Tetris em LEDs, ver abaixo) |
 
-Os instaladores saem **sem assinatura** (veja o [guia de instalação](guia-instalacao.md) para abrir no macOS). Por
-enquanto o Berrante roda **só no macOS**: o app recusa abrir em outro sistema e o `electron-builder.yml` só tem o
-alvo `mac`.
+Os instaladores saem **sem assinatura** (veja o [guia de instalação](guia-instalacao.md) para abrir no macOS e passar
+pelo SmartScreen no Windows). O Berrante roda no **macOS** e no **Windows**; em outro sistema ele avisa e fecha.
+
+Cada sistema empacota o seu: `yarn dist` num Mac e `yarn dist:win` num Windows (o NSIS do Windows não roda no
+macOS sem Wine). O `dist:win` gera as duas arquiteturas a partir de uma máquina x64: não há dependência nativa, então o
+electron-builder só baixa o Electron de cada arquitetura. Para **rodar** o build `arm64` é preciso um Windows ARM (ou
+uma VM ARM). Windows 32 bits (`ia32`) ficou de fora: o Electron parou de publicar essa build.
 
 Variáveis só de dev (ignoradas no app empacotado):
 
@@ -82,6 +90,8 @@ nítido até em 32 px. O electron-builder converte o PNG em `.icns`. Em dev
 o mesmo PNG é aplicado no Dock. A sidebar usa a mesma peça ao lado do nome.
 
 ## Menu e atalhos
+
+Os atalhos são `CmdOrCtrl`: no Windows, troque `⌘` por `Ctrl` e `⌥` por `Alt`.
 
 | Atalho | Ação |
 |---|---|
@@ -159,7 +169,7 @@ src/
 
 ### Dados
 
-Em `~/Library/Application Support/Berrante/`: `projects.json`, `repositories.json`, `settings.json`,
+Em `~/Library/Application Support/Berrante/` (macOS) ou `%APPDATA%Berrante` (Windows): `projects.json`, `repositories.json`, `settings.json`,
 `runtime-state.json`, `secrets.bin` (cifrado), `logs/berrante.log` (JSON lines) e `logs/services/*.log`.
 
 ## Testes
@@ -167,12 +177,37 @@ Em `~/Library/Application Support/Berrante/`: `projects.json`, `repositories.jso
 `yarn test` roda sobre fixtures em `tests/fixtures/repos`: README, `package.json` e compose de um projeto fictício
 (`fazenda-api`, `fazenda-web` e `fazenda-logs`), com `.env.example` só com chaves.
 
-## Só macOS (por enquanto)
+## macOS e Windows
 
-As primeiras versões rodam apenas no macOS. Tudo que toca o SO continua passando por ports (`CommandRunner`,
-`PortScannerGateway`, `ProcessManagerGateway`, `ProcessKiller`, `ShellEnv`), então suportar outro sistema no futuro
-é escrever novos adapters no `container.ts` e voltar a ligar os alvos no `electron-builder.yml`, sem mexer em use
-case.
+Tudo que toca o SO passa por ports, e o `container.ts` escolhe o adapter de cada sistema. Os use cases são os mesmos.
+
+| Peça | macOS | Windows |
+|---|---|---|
+| Shell dos passos (`ShellEnv`) | `$SHELL -c`, com o `PATH` do shell de login | Git Bash (`<Git>inash.exe -c`); sem ele, `cmd.exe /d /s /c` |
+| Process group (`ProcessManager`) | `detached` cria o grupo (pgid = pid do shell) | não existe: o "grupo" é a árvore que nasce no shell |
+| Recolher | `SIGTERM` no grupo, `SIGKILL` após o timeout | `taskkill /PID <shell> /T /F` (console não tem SIGTERM de fora) |
+| Portas (`PortScannerGateway`) | `LsofPortScanner`: `lsof` + `ps` | `WindowsPortScanner`: `netstat -ano` + `Get-CimInstance Win32_Process` |
+| Terminal | `MacTerminal`: `open -a` (Terminal, iTerm, Warp, Ghostty) | `WindowsTerminal`: Windows Terminal, PowerShell, Prompt de Comando, Git Bash |
+| VS Code | `open -b com.microsoft.VSCode` | `Code.exe` (instalação do usuário, do sistema ou a do `code` no PATH) |
+| Cofre (`safeStorage`) | Keychain | DPAPI |
+| Janela e menu | barra embutida com os semáforos; menu do app | moldura padrão; menus Arquivo/…/Ajuda na janela |
+| Bandeja | ícone template na barra de menus | ícone azul na área de notificação (clique abre o menu) |
+
+Detalhes do Windows:
+
+- Todo `execFile`/`spawn` leva `windowsHide: true`; sem isso cada `git`, `docker` ou `netstat` pisca uma janela de
+  console. O `detached` continua: no Windows ele tira o serviço do job do Electron, para que "Manter rodando" funcione.
+- Sem process group, a porta de um serviço é achada subindo o PPID do processo que escuta até o shell do serviço
+  (`buildProcessTable`). Um "pai" criado depois do filho é ignorado (PID reaproveitado).
+- O `netstat` sai traduzido ("ESCUTANDO"), então uma linha TCP está em LISTEN quando o endereço remoto tem porta 0.
+- O Windows não informa a pasta de trabalho de outro processo: a coluna de pasta do Contar a boiada fica vazia.
+- A tabela de processos (PowerShell, ~1 s) é reaproveitada por 5 s e renovada quando aparece um PID novo em LISTEN; o
+  dono de cada processo (`GetOwner`, lento) é buscado em segundo plano.
+- O `which()` só aceita `.exe`/`.com`: um `.cmd` exigiria `cmd.exe` e reabriria a porta para injeção. As CLIs de IA
+  são procuradas como `%USERPROFILE%.localinclaude.exe` / `agy.exe`.
+- O `GIT_ASKPASS` continua um script `#!/bin/sh`: o Git for Windows roda scripts com shebang pelo próprio `sh`.
+- Atalhos usam `CmdOrCtrl`: `⌘` no macOS, `Ctrl` no Windows. O renderer recebe o sistema pelo preload
+  (`window.berrante.platform`) para trocar textos e atalhos.
 
 ## Montar uma versão
 

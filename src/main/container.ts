@@ -27,6 +27,10 @@ import { DockerRepoInspector } from './infra/inspector/DockerRepoInspector'
 import { ElectronShell } from './infra/electron/ElectronShell'
 import { VsCodeEditor } from './infra/editor/VsCodeEditor'
 import { MacTerminal } from './infra/terminal/MacTerminal'
+import { WindowsTerminal } from './infra/terminal/WindowsTerminal'
+import { WindowsVsCodeEditor } from './infra/editor/WindowsVsCodeEditor'
+import { WindowsPortScanner } from './infra/ports/WindowsPortScanner'
+import { isWindows } from './infra/platform/platform'
 import { FetchHttpProbe } from './infra/http/FetchHttpProbe'
 import { FsEnvFile } from './infra/env/FsEnvFile'
 import { hostPorts } from './application/startup/detectors/composeParser'
@@ -128,12 +132,13 @@ export function buildContainer(getWindow: () => BrowserWindow | null) {
   const pm = new ProcessManager(join(dataDir, 'logs', 'services'), shellEnv, logger)
   const killer = new PosixProcessKiller()
   const docker = new DockerCliAdapter(runner, shellEnv)
-  const ports = new LsofPortScanner(runner)
+  // Adapters por sistema: o resto do app só conhece as interfaces (ports) do domínio.
+  const ports = isWindows ? new WindowsPortScanner(runner, () => pm.handles().map((h) => h.pgid)) : new LsofPortScanner(runner)
   const ai = new AiCliAdapter(runner)
   const inspector = new DockerRepoInspector(runner)
   const shell = new ElectronShell(getWindow)
-  const editor = new VsCodeEditor(runner)
-  const terminal = new MacTerminal(runner)
+  const editor = isWindows ? new WindowsVsCodeEditor(shellEnv) : new VsCodeEditor(runner)
+  const terminal = isWindows ? new WindowsTerminal(shellEnv) : new MacTerminal(runner)
   const http = new FetchHttpProbe()
   const envFiles = new FsEnvFile()
 

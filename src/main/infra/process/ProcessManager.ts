@@ -7,7 +7,7 @@ import { AppError } from '@main/domain/errors/AppError'
 import type { ShellEnv } from '../platform/ShellEnv'
 import { FileTail } from './FileTail'
 import { LogRing } from './LogRing'
-import { isAlive, terminate } from './PosixProcessKiller'
+import { isGroupAlive, terminateGroup } from './PosixProcessKiller'
 
 interface Entry {
   handle: ProcessHandle | null
@@ -69,11 +69,11 @@ export class ProcessManager implements ProcessManagerGateway {
 
   isAlive(serviceId: string): boolean {
     const h = this.entries.get(serviceId)?.handle
-    return Boolean(h && isAlive(-h.pgid))
+    return Boolean(h && isGroupAlive(h.pgid))
   }
 
   handles(): ProcessHandle[] {
-    return [...this.entries.values()].map((e) => e.handle).filter((h): h is ProcessHandle => h !== null && isAlive(-h.pgid))
+    return [...this.entries.values()].map((e) => e.handle).filter((h): h is ProcessHandle => h !== null && isGroupAlive(h.pgid))
   }
 
   async spawn(req: SpawnRequest): Promise<ProcessHandle> {
@@ -85,7 +85,17 @@ export class ProcessManager implements ProcessManagerGateway {
 
     let child: ChildProcess
     try {
-      child = spawn(this.shellEnv.shell, ['-c', req.command], { cwd: req.cwd, env, detached: true, stdio: ['ignore', fd, fd] })
+      // detached: no POSIX cria o process group; no Windows tira o processo do job do Electron, para que ele
+      // sobreviva ao fechamento do app. windowsHide esconde o console próprio que o detached abriria.
+      const shell = this.shellEnv.invocation(req.command)
+      child = spawn(shell.file, shell.args, {
+        cwd: req.cwd,
+        env,
+        detached: true,
+        windowsHide: true,
+        windowsVerbatimArguments: shell.windowsVerbatimArguments,
+        stdio: ['ignore', fd, fd]
+      })
     } finally {
       closeSync(fd)
     }
@@ -125,7 +135,7 @@ export class ProcessManager implements ProcessManagerGateway {
     e.watcher = null
     const pgid = e.handle?.pgid
     // O shell pode morrer e deixar filhos no grupo: limpa o grupo inteiro.
-    if (pgid && isAlive(-pgid)) await terminate(-pgid, 2000).catch(() => undefined)
+    if (pgid && isGroupAlive(pgid)) await terminateGroup(pgid, 2000).catch(() => undefined)
     e.handle = null
     e.child = null
     const exit: ProcessExit = { serviceId, code, signal: e.stopping && !signal ? 'SIGTERM' : signal }
@@ -144,7 +154,7 @@ export class ProcessManager implements ProcessManagerGateway {
     const e = this.entries.get(serviceId)
     if (!e?.handle) return
     e.stopping = true
-    await terminate(-e.handle.pgid, timeoutMs)
+    await terminateGroup(e.handle.pgid, timeoutMs)
     if (!e.child && e.handle) await this.finish(serviceId, null, 'SIGTERM')
     else await e.exit
   }
@@ -153,7 +163,7 @@ export class ProcessManager implements ProcessManagerGateway {
   async adopt(handles: ProcessHandle[]): Promise<ProcessHandle[]> {
     const adopted: ProcessHandle[] = []
     for (const h of handles) {
-      if (!isAlive(-h.pgid)) continue
+      if (!isGroupAlive(h.pgid)) continue
       const e = this.entry(h.serviceId)
       e.handle = h
       e.stopping = false
@@ -163,7 +173,7 @@ export class ProcessManager implements ProcessManagerGateway {
       await e.tail.start(Math.max(0, size - 64 * 1024)).catch(() => (e.tail = null))
       e.exit = new Promise((resolve) => {
         e.watcher = setInterval(() => {
-          if (!isAlive(-h.pgid)) void this.finish(h.serviceId, null, null).then(resolve)
+          if (!isGroupAlive(h.pgid)) void this.finish(h.serviceId, null, null).then(resolve)
         }, 1000)
       })
       adopted.push(h)

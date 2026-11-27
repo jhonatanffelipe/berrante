@@ -3,13 +3,29 @@ import { app, dialog, shell } from 'electron'
 const RELEASES = 'https://github.com/jhonatanffelipe/berrante/releases/latest'
 
 /**
- * Só no app empacotado. Avisa dos dois jeitos de abrir que deixam o Berrante lento:
+ * Só no app empacotado. Avisa dos jeitos de abrir que deixam o Berrante lento:
  * - versão Intel (x64) num Mac Apple Silicon, rodando pelo Rosetta;
- * - aberto fora de Aplicativos (de dentro do .dmg, de Downloads ou de uma pasta de build).
+ * - versão x64 num Windows ARM, rodando pela emulação;
+ * - macOS: aberto fora de Aplicativos (de dentro do .dmg, de Downloads ou de uma pasta de build).
  * Devolve true quando o app vai reiniciar (movido para Aplicativos) e o boot deve parar.
  */
 export async function checkInstall(): Promise<boolean> {
   if (!app.isPackaged) return false
+
+  const isMac = process.platform === 'darwin'
+  if (app.runningUnderARM64Translation && !isMac) {
+    const { response } = await dialog.showMessageBox({
+      type: 'warning',
+      message: 'Você está usando a versão x64 do Berrante',
+      detail: 'Este Windows roda em ARM: a versão x64 funciona pela emulação e fica mais lenta. Baixe o instalador "win-arm64" e instale por cima.',
+      buttons: ['Baixar a versão ARM64', 'Continuar assim'],
+      defaultId: 0,
+      cancelId: 1
+    })
+    if (response === 0) void shell.openExternal(RELEASES)
+  }
+
+  if (!isMac) return false
 
   if (app.runningUnderARM64Translation) {
     const { response } = await dialog.showMessageBox({

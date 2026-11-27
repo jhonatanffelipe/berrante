@@ -6,6 +6,7 @@ import { PixelButton } from '../../components/ui/PixelButton'
 import { Spinner } from '../../components/ui/Spinner'
 import { useToast } from '../../components/ui/Toast'
 import { useAppData } from '../layout/AppData'
+import { isWindows } from '../../lib/platform'
 
 /** Login: OAuth Device Flow (principal) ou importar o token do gh CLI (atalho). */
 export function LoginCard() {
@@ -78,7 +79,7 @@ export function LoginCard() {
   return (
     <PixelBlock accent="accent" glow className="mx-auto max-w-xl p-6">
       <h2 className="title text-lg">Entrar com GitHub</h2>
-      <p className="mt-2 text-comment">Para listar e clonar seus repositórios. O token fica cifrado no Keychain (safeStorage) e nunca vai para log.</p>
+      <p className="mt-2 text-comment">Para listar e clonar seus repositórios. O token fica cifrado no {isWindows ? 'cofre do Windows (DPAPI)' : 'Keychain'} (safeStorage) e nunca vai para log.</p>
       {flow ? (
         <div className="mt-5 space-y-4">
           <p>Digite este código na página que abriu no navegador:</p>

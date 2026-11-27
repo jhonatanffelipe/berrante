@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { AiCliName, AiCliStatus, TerminalApp, TotpSetup, TotpStatus } from '@shared/types'
-import { TERMINAL_APPS } from '@shared/types/settings'
+import { terminalAppsFor } from '@shared/types/settings'
+import { isWindows, platform } from '../../lib/platform'
 import { ACCENTS, ACCENT_NAMES, isPresetTheme } from '@shared/theme'
 import { cn } from '../../lib/cn'
 import { call, errorMessage } from '../../lib/api'
@@ -241,11 +242,11 @@ export function SettingsPage() {
       <Section title="Dia a dia">
         <label className="flex items-center gap-3">
           <Switch checked={settings.notifications} onCheckedChange={(v) => void patch({ notifications: v })} label="Avisos do sistema" />
-          Avisar no macOS quando a boiada subir, um passo falhar ou um serviço cair <span className="text-comment">(só com a janela fora de foco)</span>
+          Avisar no {isWindows ? 'Windows' : 'macOS'} quando a boiada subir, um passo falhar ou um serviço cair <span className="text-comment">(só com a janela fora de foco)</span>
         </label>
         <Field label="Terminal para abrir as pastas">
           <select className="pixel-input !w-48" value={settings.terminalApp} onChange={(e) => void patch({ terminalApp: e.target.value as TerminalApp })}>
-            {TERMINAL_APPS.map((t) => (
+            {terminalAppsFor(platform).map((t) => (
               <option key={t} value={t}>{t}</option>
             ))}
           </select>
@@ -253,7 +254,7 @@ export function SettingsPage() {
       </Section>
 
       <Section title="Processos">
-        <Field label="SIGTERM → SIGKILL (ms)">
+        <Field label={isWindows ? 'Espera ao recolher, depois do taskkill (ms)' : 'SIGTERM → SIGKILL (ms)'}>
           <input type="number" min={500} max={60000} step={500} className="pixel-input w-32" value={settings.stopTimeoutMs} onChange={(e) => void patch({ stopTimeoutMs: Number(e.target.value) })} />
         </Field>
       </Section>

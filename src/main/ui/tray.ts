@@ -17,8 +17,13 @@ export interface TrayDeps {
   quit: () => void
 }
 
-/** Ícone "template" do macOS (preto + alfa; o sistema pinta claro/escuro): a peça Z do Berrante. */
+/**
+ * A peça Z do Berrante.
+ * - macOS: ícone "template" (preto + alfa; o sistema pinta claro/escuro).
+ * - Windows: a área de notificação não pinta template; a peça vai na cor de destaque (azul), visível no claro e no escuro.
+ */
 function trayIcon(): NativeImage {
+  const template = process.platform === 'darwin'
   const size = 36 // 18pt @2x
   const cell = 10
   const piece = [[0, 0], [1, 0], [1, 1], [2, 1]]
@@ -29,23 +34,33 @@ function trayIcon(): NativeImage {
     for (let y = 1; y < cell; y++) {
       for (let x = 1; x < cell; x++) {
         const i = ((oy + cy! * cell + y) * size + (ox + cx! * cell + x)) * 4
-        buf[i + 3] = 255 // BGRA: só o alfa importa num template
+        if (!template) {
+          // BGRA: #2f8cff
+          buf[i] = 0xff
+          buf[i + 1] = 0x8c
+          buf[i + 2] = 0x2f
+        }
+        buf[i + 3] = 255 // num template só o alfa importa
       }
     }
   }
   const img = nativeImage.createFromBitmap(buf, { width: size, height: size, scaleFactor: 2 })
-  img.setTemplateImage(true)
+  if (template) img.setTemplateImage(true)
   return img
 }
 
-/** Berrante na barra de menu: tocar e recolher cada tropa sem abrir a janela. */
+/** Berrante na barra de menus (macOS) ou na área de notificação (Windows): tocar e recolher cada tropa sem abrir a janela. */
 export class BerranteTray {
   private tray: Tray | null = null
 
   constructor(private readonly deps: TrayDeps) {}
 
   update(items: TrayProject[]): void {
-    this.tray ??= new Tray(trayIcon())
+    if (!this.tray) {
+      this.tray = new Tray(trayIcon())
+      // Windows: o clique esquerdo não abre o menu sozinho (só o direito); abre nos dois, como no macOS.
+      if (process.platform !== 'darwin') this.tray.on('click', () => this.tray?.popUpContextMenu())
+    }
     const running = items.reduce((n, i) => n + i.running, 0)
     this.tray.setTitle(running ? ` ${running}` : '')
     this.tray.setToolTip(running ? `Berrante · ${running} processo(s) de pé` : 'Berrante')
