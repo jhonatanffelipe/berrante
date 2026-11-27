@@ -6,6 +6,7 @@ Cada pasta guarda as notas de uma versão. Os instaladores ficam anexados ao
 
 | Versão | Data | Plataformas | Notas |
 |---|---|---|---|
+| [v0.7.0](v0.7.0/README.md) | 2026-11-26 | Windows (x64 e arm64); macOS a anexar | Suporte a Windows: Git Bash, netstat, taskkill, bandeja e atalhos `Ctrl` |
 | [v0.6.2](v0.6.2/README.md) | 2026-11-26 | macOS (arm64 e x64) | Serviço fora do play sem apagado, com indicador próprio |
 | [v0.6.1](v0.6.1/README.md) | 2026-11-26 | macOS (arm64 e x64) | Vistoria acusa cada porta só no passo que a usa |
 | [v0.6.0](v0.6.0/README.md) | 2026-11-26 | macOS (arm64 e x64) | Mudar a porta ocupada pela vistoria, direto no `.env` |
@@ -18,17 +19,26 @@ Cada pasta guarda as notas de uma versão. Os instaladores ficam anexados ao
 
 ## Montar uma versão nova
 
+Cada sistema empacota o seu: os `.dmg` saem de um Mac (`yarn dist`) e os `.exe` de um Windows (`yarn dist:win`).
+Quem publica a release anexa os instaladores do próprio sistema; o outro entra depois com `gh release upload`.
+
 ```bash
 # 1. Suba "version" no package.json e escreva a entrada no CHANGELOG.md
 yarn test
-yarn dist                       # release/<versão>/: .dmg e .zip (arm64 e x64)
+yarn dist                       # no Mac: release/<versão>/ com .dmg e .zip (arm64 e x64)
+yarn dist:win                   # no Windows: release/<versão>/ com .exe e .zip (x64 e arm64)
 
 # 2. Escreva versions/vX.Y.Z/README.md (downloads, tamanhos e SHA-256)
-shasum -a 256 release/X.Y.Z/*.{dmg,zip}
+shasum -a 256 release/X.Y.Z/*.{dmg,zip}     # no Mac
+sha256sum release/X.Y.Z/*.{exe,zip}         # no Windows (Git Bash)
 
 # 3. Commit, tag e release com os instaladores anexados
 git tag -a vX.Y.Z -m "Berrante vX.Y.Z"
 git push origin main vX.Y.Z
 gh release create vX.Y.Z --title "Berrante vX.Y.Z" --notes-file versions/vX.Y.Z/README.md \
   release/X.Y.Z/*.{dmg,zip}
+
+# 4. Os instaladores do outro sistema entram na mesma release depois
+#    (e as notas ganham as linhas e os SHA-256 deles: gh release edit vX.Y.Z --notes-file …)
+gh release upload vX.Y.Z release/X.Y.Z/*.{exe,zip}    # ou *.{dmg,zip}, a partir do Mac
 ```

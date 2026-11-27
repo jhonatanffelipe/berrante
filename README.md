@@ -125,13 +125,12 @@ Baixe na página da [última versão](https://github.com/jhonatanffelipe/berrant
 
 | Sistema | Arquivo |
 |---|---|
-| macOS · Apple Silicon (M1 ou mais novo) | `Berrante-0.6.2-mac-arm64.dmg` |
-| macOS · Intel | `Berrante-0.6.2-mac-x64.dmg` |
-| Windows 10/11 · x64 (Intel/AMD) | `Berrante-<versão>-win-x64.exe` |
-| Windows 10/11 · ARM (Snapdragon) | `Berrante-<versão>-win-arm64.exe` |
+| macOS · Apple Silicon (M1 ou mais novo) | `Berrante-0.7.0-mac-arm64.dmg` |
+| macOS · Intel | `Berrante-0.7.0-mac-x64.dmg` |
+| Windows 10/11 · x64 (Intel/AMD) | `Berrante-0.7.0-win-x64.exe` |
+| Windows 10/11 · ARM (Snapdragon) | `Berrante-0.7.0-win-arm64.exe` |
 
-Os instaladores do Windows saem a partir da próxima versão. O app não é assinado, então o macOS (e o SmartScreen,
-no Windows) pede uma confirmação na primeira abertura. O passo a passo, da instalação à
+O app não é assinado, então o macOS (e o SmartScreen, no Windows) pede uma confirmação na primeira abertura. O passo a passo, da instalação à
 primeira tropa de pé, está no **[guia de instalação](docs/guia-instalacao.md)**.
 
 > **macOS e Windows.** O Berrante roda no macOS 12 ou mais novo (Apple Silicon e Intel) e no Windows 10/11 (x64 e ARM64;

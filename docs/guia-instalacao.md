@@ -7,10 +7,10 @@ Baixe o instalador na página da versão em
 
 | Sistema | Processador | Arquivo |
 |---|---|---|
-| macOS 12 ou mais novo | Apple Silicon (M1, M2, M3, M4…) | `Berrante-0.6.2-mac-arm64.dmg` |
-| macOS 12 ou mais novo | Intel | `Berrante-0.6.2-mac-x64.dmg` |
-| Windows 10/11 | x64 (Intel/AMD, a maioria dos PCs) | `Berrante-<versão>-win-x64.exe` |
-| Windows 11 | ARM64 (Snapdragon, Surface Pro X…) | `Berrante-<versão>-win-arm64.exe` |
+| macOS 12 ou mais novo | Apple Silicon (M1, M2, M3, M4…) | `Berrante-0.7.0-mac-arm64.dmg` |
+| macOS 12 ou mais novo | Intel | `Berrante-0.7.0-mac-x64.dmg` |
+| Windows 10/11 | x64 (Intel/AMD, a maioria dos PCs) | `Berrante-0.7.0-win-x64.exe` |
+| Windows 11 | ARM64 (Snapdragon, Surface Pro X…) | `Berrante-0.7.0-win-arm64.exe` |
 
 > **Qual é o meu processador?** Menu  → **Sobre Este Mac**. Se aparecer "Chip Apple M…", é Apple Silicon
 > (`arm64`); se aparecer "Processador Intel", é `x64`. A versão Intel num Mac Apple Silicon roda pelo Rosetta e
