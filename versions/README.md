@@ -6,7 +6,7 @@ Cada pasta guarda as notas de uma versão. Os instaladores ficam anexados ao
 
 | Versão | Data | Plataformas | Notas |
 |---|---|---|---|
-| [v0.7.0](v0.7.0/README.md) | 2026-11-26 | Windows (x64 e arm64); macOS a anexar | Suporte a Windows: Git Bash, netstat, taskkill, bandeja e atalhos `Ctrl` |
+| [v0.7.0](v0.7.0/README.md) | 2026-11-26 | macOS (arm64 e x64) e Windows (x64 e arm64) | Suporte a Windows: Git Bash, netstat, taskkill, bandeja e atalhos `Ctrl` |
 | [v0.6.2](v0.6.2/README.md) | 2026-11-26 | macOS (arm64 e x64) | Serviço fora do play sem apagado, com indicador próprio |
 | [v0.6.1](v0.6.1/README.md) | 2026-11-26 | macOS (arm64 e x64) | Vistoria acusa cada porta só no passo que a usa |
 | [v0.6.0](v0.6.0/README.md) | 2026-11-26 | macOS (arm64 e x64) | Mudar a porta ocupada pela vistoria, direto no `.env` |
