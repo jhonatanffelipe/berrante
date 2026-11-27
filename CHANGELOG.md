@@ -4,6 +4,15 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e
 [SemVer](https://semver.org/lang/pt-BR/). Enquanto estiver em `0.x`, versões menores podem mudar o formato dos
 dados; quando isso acontecer, a nota da versão avisa.
 
+## [0.8.0] — 2026-11-27
+
+O menu de baixo da barra lateral pode ser recolhido.
+
+### Adicionado
+- **Recolher o menu da barra lateral:** o botão **Menu ▾** acima de Repositórios, Contar a boiada, Curral e
+  Configurações recolhe e abre esses atalhos, liberando espaço para a lista de tropas. O app lembra se ficou aberto
+  ou recolhido.
+
 ## [0.7.0] — 2026-11-26
 
 O Berrante chega ao Windows (x64 e ARM64), sem mudar nada no macOS.

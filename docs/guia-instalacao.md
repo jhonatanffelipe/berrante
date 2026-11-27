@@ -7,8 +7,8 @@ Baixe o instalador na página da versão em
 
 | Sistema | Processador | Arquivo |
 |---|---|---|
-| macOS 12 ou mais novo | Apple Silicon (M1, M2, M3, M4…) | `Berrante-0.7.0-mac-arm64.dmg` |
-| macOS 12 ou mais novo | Intel | `Berrante-0.7.0-mac-x64.dmg` |
+| macOS 12 ou mais novo | Apple Silicon (M1, M2, M3, M4…) | `Berrante-0.8.0-mac-arm64.dmg` |
+| macOS 12 ou mais novo | Intel | `Berrante-0.8.0-mac-x64.dmg` |
 | Windows 10/11 | x64 (Intel/AMD, a maioria dos PCs) | `Berrante-0.7.0-win-x64.exe` |
 | Windows 11 | ARM64 (Snapdragon, Surface Pro X…) | `Berrante-0.7.0-win-arm64.exe` |
 
