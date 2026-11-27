@@ -29,6 +29,15 @@ function NavCard({ index, active, dot, onClick, children }: { index: string; act
 
 const pad = (n: number) => String(n).padStart(2, '0')
 
+const MENU_OPEN_KEY = 'berrante:sidebar-menu-open'
+function readMenuOpen() {
+  try {
+    return localStorage.getItem(MENU_OPEN_KEY) !== 'false'
+  } catch {
+    return true
+  }
+}
+
 export function Sidebar() {
   const { view, go, projects, auth } = useAppData()
   const { runtimes } = useRuntimeCtx()
@@ -36,6 +45,16 @@ export function Sidebar() {
   useMenuCommand((cmd) => cmd.type === 'newProject' && setCreating(true))
   const [now, setNow] = useState(new Date())
   useInterval(() => setNow(new Date()), 10_000)
+  const [menuOpen, setMenuOpen] = useState(readMenuOpen)
+  const toggleMenu = () =>
+    setMenuOpen((open) => {
+      try {
+        localStorage.setItem(MENU_OPEN_KEY, String(!open))
+      } catch {
+        /* sem storage: só não lembra */
+      }
+      return !open
+    })
   const is = (v: View['name'], id?: string) => view.name === v && (!id || (view.name === 'project' && view.id === id))
   const running = Object.values(runtimes).reduce((acc, rt) => acc + rt.services.filter((s) => s.status === 'running').length, 0)
 
@@ -72,23 +91,39 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="space-y-2 border-t border-line/60 pt-3">
-        <NavCard index="R" active={is('repos')} onClick={() => go({ name: 'repos' })}>
-          Repositórios
-        </NavCard>
-        <NavCard index="P" active={is('ports')} onClick={() => go({ name: 'ports' })}>
-          <Term tech={isWindows ? 'Portas TCP em LISTEN e PIDs (netstat + PowerShell)' : 'Portas TCP em LISTEN e PIDs (lsof + ps)'} side="right">
-            Contar a boiada
-          </Term>
-        </NavCard>
-        <NavCard index="D" active={is('containers')} onClick={() => go({ name: 'containers' })}>
-          <Term tech="Containers Docker da máquina: parar, subir e reiniciar" side="right">
-            Curral
-          </Term>
-        </NavCard>
-        <NavCard index="C" active={is('settings')} onClick={() => go({ name: 'settings' })}>
-          Configurações
-        </NavCard>
+      <div className="border-t border-line/60 pt-2">
+        <button
+          onClick={toggleMenu}
+          aria-expanded={menuOpen}
+          aria-controls="sidebar-menu"
+          className="flex w-full items-center justify-between rounded-sm px-1 py-1 text-comment transition-colors hover:text-fg"
+        >
+          <span className="label-muted">Menu</span>
+          <span className={cn('font-mono text-[10px] transition-transform duration-200', !menuOpen && 'rotate-180')} aria-hidden>
+            ▾
+          </span>
+        </button>
+        <div id="sidebar-menu" className={cn('grid transition-[grid-template-rows] duration-200 ease-out', menuOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]')}>
+          {/* inert tira os cards recolhidos do Tab; @types/react 18 ainda não tipa o atributo */}
+          <div className={cn('min-h-0 space-y-2 overflow-hidden', menuOpen && 'pt-1')} {...(!menuOpen && { inert: '' })}>
+            <NavCard index="R" active={is('repos')} onClick={() => go({ name: 'repos' })}>
+              Repositórios
+            </NavCard>
+            <NavCard index="P" active={is('ports')} onClick={() => go({ name: 'ports' })}>
+              <Term tech={isWindows ? 'Portas TCP em LISTEN e PIDs (netstat + PowerShell)' : 'Portas TCP em LISTEN e PIDs (lsof + ps)'} side="right">
+                Contar a boiada
+              </Term>
+            </NavCard>
+            <NavCard index="D" active={is('containers')} onClick={() => go({ name: 'containers' })}>
+              <Term tech="Containers Docker da máquina: parar, subir e reiniciar" side="right">
+                Curral
+              </Term>
+            </NavCard>
+            <NavCard index="C" active={is('settings')} onClick={() => go({ name: 'settings' })}>
+              Configurações
+            </NavCard>
+          </div>
+        </div>
       </div>
 
       <div className="rounded-md border border-line/70 bg-deep px-3 py-2.5">
