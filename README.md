@@ -127,8 +127,8 @@ Baixe na página da [última versão](https://github.com/jhonatanffelipe/berrant
 |---|---|
 | macOS · Apple Silicon (M1 ou mais novo) | `Berrante-0.8.0-mac-arm64.dmg` |
 | macOS · Intel | `Berrante-0.8.0-mac-x64.dmg` |
-| Windows 10/11 · x64 (Intel/AMD) | `Berrante-0.7.0-win-x64.exe` |
-| Windows 10/11 · ARM (Snapdragon) | `Berrante-0.7.0-win-arm64.exe` |
+| Windows 10/11 · x64 (Intel/AMD) | `Berrante-0.8.0-win-x64.exe` |
+| Windows 10/11 · ARM (Snapdragon) | `Berrante-0.8.0-win-arm64.exe` |
 
 O app não é assinado, então o macOS (e o SmartScreen, no Windows) pede uma confirmação na primeira abertura. O passo a passo, da instalação à
 primeira tropa de pé, está no **[guia de instalação](docs/guia-instalacao.md)**.
